@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucra ROI Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0b;--surface:#141416;--surface2:#1e1e22;--border:#2a2a2e;
+  --text:#f5f5f5;--text2:#a1a1aa;--text3:#71717a;
+  --green:#9DFF93;--green-bg:rgba(157,255,147,0.08);--green-border:rgba(157,255,147,0.2);
+  --amber:#F59E0B;--amber-bg:rgba(245,158,11,0.08);--amber-border:rgba(245,158,11,0.2);
+  --red:#EF4444;--red-bg:rgba(239,68,68,0.08);
+  --blue:#3B82F6;--blue-bg:rgba(59,130,246,0.08);--blue-border:rgba(59,130,246,0.2);
+  --cyan:#06B6D4;--purple:#8B5CF6;--pink:#EC4899;
+  --radius:10px;--font:'DM Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;-webkit-text-size-adjust:100%;padding-bottom:env(safe-area-inset-bottom)}
+.app{max-width:860px;margin:0 auto;padding:24px 20px 60px}
+
+/* ─── HEADER ─── */
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.logo{font-size:26px;font-weight:700;color:var(--green);letter-spacing:-1px}
+.logo span{color:var(--text3);font-weight:400;font-size:14px;margin-left:8px;letter-spacing:0}
+.header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hbtn{padding:7px 13px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--text2);cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:5px;transition:all 0.15s;white-space:nowrap}
+.hbtn:hover{border-color:var(--green);color:var(--green)}
+.hbtn svg{width:12px;height:12px}
+.hbtn-version{font-size:11px;color:var(--text3)}
+
+/* ─── TABS ─── */
+.tabs{display:flex;gap:3px;background:var(--surface);border-radius:var(--radius);padding:4px;margin-bottom:24px;flex-wrap:wrap}
+.tab{flex:1;padding:9px 10px;font-size:11px;font-weight:500;background:none;border:none;cursor:pointer;color:var(--text3);border-radius:8px;font-family:var(--font);transition:all 0.15s;min-height:40px;display:flex;align-items:center;justify-content:center;white-space:nowrap;min-width:0}
+.tab.active{background:var(--surface2);color:var(--text)}
+.tab:hover:not(.active){color:var(--text2)}
+
+/* ─── INPUTS ─── */
+.presets{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.presets::-webkit-scrollbar{display:none}
+.preset{padding:5px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface);color:var(--text3);cursor:pointer;white-space:nowrap;font-family:var(--font);transition:all 0.15s;min-height:34px;display:flex;align-items:center}
+.preset.on{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.preset:hover:not(.on){border-color:var(--text3)}
+.scenarios{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.scn{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text3);cursor:pointer;font-family:var(--font);transition:all 0.15s;min-height:34px;display:flex;align-items:center}
+.scn[data-s="cons"].on{border-color:var(--amber);background:var(--amber-bg);color:var(--amber)}
+.scn[data-s="avg"].on{border-color:var(--blue);background:var(--blue-bg);color:var(--blue)}
+.scn[data-s="case"].on{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+
+/* sensitivity toggles */
+.sens-row{display:flex;gap:6px;margin-bottom:16px;align-items:center}
+.sens-label{font-size:12px;color:var(--text3);margin-right:4px}
+.sens-btn{padding:5px 14px;border-radius:8px;font-size:11px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text3);cursor:pointer;font-family:var(--font);transition:all 0.15s}
+.sens-btn.on.pessimistic{border-color:var(--red);background:var(--red-bg);color:var(--red)}
+.sens-btn.on.realistic{border-color:var(--blue);background:var(--blue-bg);color:var(--blue)}
+.sens-btn.on.optimistic{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+
+.inputs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.input-group{position:relative}
+.input-group.span2{grid-column:span 2}
+.input-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.input-label{font-size:12px;color:var(--text2)}
+.input-val{display:flex;align-items:center}
+.vi{font-size:16px;font-weight:500;font-family:var(--mono);color:var(--text);background:transparent;border:none;border-bottom:1px dashed transparent;text-align:right;width:75px;outline:none;padding:0;-moz-appearance:textfield}
+.vi::-webkit-inner-spin-button,.vi::-webkit-outer-spin-button{-webkit-appearance:none}
+.vi:hover{border-bottom-color:var(--text3)}
+.vi:focus{border-bottom-color:var(--green);color:var(--green)}
+.vp{font-size:14px;font-weight:500;font-family:var(--mono);color:var(--text)}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:4px;background:var(--surface2);border-radius:2px;outline:none;touch-action:manipulation}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--green);cursor:pointer;border:2px solid var(--bg)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--green);cursor:pointer;border:2px solid var(--bg)}
+.sn{font-size:11px;color:var(--text3);margin-top:3px}
+.over-cap{font-size:10px;color:var(--amber);font-style:italic;margin-top:3px}
+
+/* ─── LAYOUT COMPONENTS ─── */
+.section-label{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.section-label .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.flow{display:flex;align-items:center;gap:8px;margin-bottom:18px;justify-content:center;flex-wrap:wrap}
+.flow-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;text-align:center;min-width:80px}
+.flow-box .label{font-size:10px;color:var(--text3);margin-bottom:3px}
+.flow-box .val{font-size:20px;font-weight:600}
+.flow-arrow{color:var(--text3);font-size:16px}
+.flow-highlight{background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--radius);padding:10px 16px;text-align:center;min-width:90px}
+.flow-highlight .label{font-size:10px;color:var(--green);margin-bottom:3px}
+.flow-highlight .val{font-size:20px;font-weight:600;color:var(--green)}
+.flow-highlight .sub{font-size:10px;color:var(--text3);margin-top:2px}
+.flow-cyan{background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);border-radius:var(--radius);padding:10px 16px;text-align:center;min-width:90px}
+.flow-cyan .label{font-size:10px;color:var(--cyan);margin-bottom:3px}
+.flow-cyan .val{font-size:20px;font-weight:600;color:var(--cyan)}
+.flow-cyan .sub{font-size:10px;color:var(--text3);margin-top:2px}
+.grid{display:grid;gap:10px;margin-bottom:18px}
+.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center}
+.stat .label{font-size:10px;color:var(--text3);margin-bottom:3px}
+.stat .val{font-size:19px;font-weight:600}
+.stat .sub{font-size:10px;color:var(--text3);margin-top:2px}
+.pitch{background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--radius);padding:13px;font-size:12px;line-height:1.7;color:var(--text2);position:relative}
+.pitch strong{color:var(--green)}
+.cp-btn{position:absolute;top:8px;right:8px;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--font)}
+.cp-btn:hover{background:var(--surface2)}
+.cp-btn.done{color:var(--green);border-color:var(--green)}
+.warn{margin-top:10px;font-size:12px;color:var(--amber);background:var(--amber-bg);border-radius:var(--radius);padding:10px}
+.card-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px}
+.card-section .ct{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.card-section .cr{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}
+.card-section .cr .k{color:var(--text3)}
+.card-section .cr .v{font-weight:500}
+.sep{border-top:1px solid var(--border);margin:8px 0;padding-top:8px}
+.pg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pf{margin-top:8px;display:flex;justify-content:space-between;align-items:center}
+.badge{font-size:11px;padding:2px 8px;border-radius:20px}
+.dc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center;position:relative}
+.dc.best{border-color:var(--green)}
+.dc .pct{font-size:15px;font-weight:600;margin-bottom:2px}
+.dc .fee{font-size:11px;color:var(--text3);margin-bottom:5px}
+.dc .row{font-size:10px;display:flex;justify-content:space-between;margin-bottom:3px}
+.dc .row .k{color:var(--text3)}
+.rb{position:absolute;top:-8px;right:8px;font-size:10px;padding:2px 8px;border-radius:20px;background:var(--green-bg);color:var(--green);font-weight:500;border:1px solid var(--green-border)}
+.rv-section{background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.15);border-radius:var(--radius);padding:14px;margin-bottom:18px}
+.quota-bar{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
+.quota-bar .hd{font-size:11px;color:var(--text3);margin-bottom:6px;display:flex;justify-content:space-between}
+.qb-track{height:7px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.qb-fill{height:100%;border-radius:4px;background:var(--green);transition:width 0.3s}
+.qb-stats{display:flex;justify-content:space-between;font-size:11px;color:var(--text3)}
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.cyan{color:var(--cyan)}.purple{color:var(--purple)}
+
+/* ─── BREAK-EVEN ENHANCED ─── */
+.be-hero{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:var(--radius);padding:14px 18px;margin-bottom:10px}
+.be-hero-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.be-label{font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:3px}
+.be-main{font-size:24px;font-weight:700;color:var(--amber);letter-spacing:-0.5px;line-height:1.1}
+.be-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.be-badge{font-size:11px;padding:3px 10px;border-radius:20px;white-space:nowrap;font-weight:500;border:1px solid;flex-shrink:0;margin-top:3px}
+.be-badge-amber{background:rgba(245,158,11,0.12);color:var(--amber);border-color:var(--amber-border)}
+.be-badge-green{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+.be-track{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:visible;position:relative}
+.be-fill{height:100%;border-radius:3px;background:var(--amber);transition:width 0.4s}
+.be-fill.low{background:var(--green)}
+.be-marker{position:absolute;top:-8px;transform:translateX(-50%);width:2px;height:21px}
+.be-marker-lbl{position:absolute;top:15px;left:50%;transform:translateX(-50%);font-size:9px;white-space:nowrap}
+.be-ticks{display:flex;justify-content:space-between;padding:0 1px;margin-top:3px}
+.be-tick{font-size:10px;color:var(--text3)}
+.upside-section{background:rgba(157,255,147,0.04);border:1px solid rgba(157,255,147,0.12);border-radius:var(--radius);padding:12px;margin-bottom:18px}
+.upside-hd{font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.upside-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.upside-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 7px;text-align:center;position:relative;margin-top:9px}
+.upside-tag{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:9px;padding:2px 6px;border-radius:10px;white-space:nowrap;font-weight:500}
+.upside-tag.floor{background:rgba(139,92,246,0.15);color:var(--purple);border:1px solid rgba(139,92,246,0.3)}
+
+/* ─── LEAVE-BEHIND GENERATOR ─── */
+.gen-section{margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.brand-fields{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.brand-fields-title{font-size:11px;color:var(--text3);margin-bottom:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+.brand-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.gen-input{flex:1;min-width:140px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:14px;color:var(--text);outline:none;font-family:var(--font)}
+.gen-input:focus{border-color:var(--green)}
+.gen-btn{padding:11px 18px;border-radius:8px;border:none;background:var(--green);color:#000;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);white-space:nowrap;min-height:42px;transition:background 0.15s}
+.gen-btn:hover{background:#7ee87a}
+.gen-btn2{padding:11px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);white-space:nowrap;min-height:42px;transition:all 0.15s}
+.gen-btn2:hover{background:var(--surface2)}
+.gen-row{display:flex;gap:7px;flex-wrap:wrap}
+.card-wrap{margin-top:14px;display:none}
+.card-wrap.show{display:block}
+.card-actions{display:flex;gap:7px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.dl-btn{padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--text2);cursor:pointer;font-family:var(--font);min-height:36px;transition:all 0.15s}
+.dl-btn:hover{background:var(--surface2)}
+.logo-drop-zone{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:2px dashed var(--border);border-radius:var(--radius);padding:14px 16px;background:var(--surface);cursor:pointer;transition:all 0.2s;min-height:70px;text-align:center;width:100%;margin-bottom:8px}
+.logo-drop-zone:hover,.logo-drop-zone.drag-over{border-color:var(--green);background:var(--green-bg)}
+.logo-drop-zone.has-logo{border-color:var(--green);border-style:solid}
+.logo-drop-zone .drop-icon{font-size:20px;line-height:1}
+.logo-drop-zone .drop-label{font-size:11px;color:var(--text2);line-height:1.4}
+.logo-drop-zone .drop-sub{font-size:10px;color:var(--text3)}
+.logo-drop-zone .logo-preview{max-height:44px;max-width:160px;object-fit:contain;border-radius:4px}
+.logo-url-row{display:flex;gap:5px;align-items:center;width:100%;margin-bottom:8px}
+.logo-url-input{flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--text);outline:none;font-family:var(--font)}
+.logo-url-input:focus{border-color:var(--green)}
+.logo-url-btn{padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);font-size:11px;color:var(--text2);cursor:pointer;white-space:nowrap;font-family:var(--font)}
+.logo-url-btn:hover{border-color:var(--green);color:var(--green)}
+#logo-status{font-size:11px;color:var(--green)}
+.template-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tmpl-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--font);transition:all 0.15s}
+.tmpl-btn.on{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.theme-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.theme-row label{font-size:12px;color:var(--text3)}
+.theme-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all 0.15s}
+.theme-swatch.on{border-color:var(--text);transform:scale(1.15)}
+.brand-color-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.brand-color-row label{font-size:12px;color:var(--text3);white-space:nowrap}
+.brand-color-row input[type=color]{width:32px;height:26px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;padding:2px}
+
+/* ─── SHARE MODAL ─── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;max-width:460px;width:100%}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:14px;color:var(--text)}
+.modal-close{float:right;background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer}
+.modal-url{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:11px;font-family:var(--mono);color:var(--text2);word-break:break-all;margin-bottom:10px;line-height:1.5}
+.modal-actions{display:flex;gap:7px;flex-wrap:wrap}
+.modal-btn{padding:9px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all 0.15s}
+.modal-btn:hover{background:var(--surface);color:var(--text)}
+.modal-btn.primary{background:var(--green);color:#000;border-color:var(--green)}
+.modal-btn.primary:hover{background:#7ee87a}
+.email-draft{margin-top:14px;border-top:1px solid var(--border);padding-top:14px}
+.email-draft label{font-size:11px;color:var(--text3);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px}
+.email-draft textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:11px;padding:9px;font-family:var(--font);resize:vertical;min-height:110px;line-height:1.6;outline:none}
+.email-draft textarea:focus{border-color:var(--green)}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--green-border);border-radius:10px;padding:10px 16px;font-size:13px;color:var(--green);font-weight:500;z-index:2000;opacity:0;transform:translateY(8px);transition:all 0.2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ─── ENTERPRISE LICENSE TAB ─── */
+.lic-builder{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.lic-builder-title{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.pkg-list{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.pi{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all 0.15s;user-select:none}
+.pi.on{border-color:var(--blue-border);background:var(--blue-bg)}
+.pi input[type=checkbox]{margin-top:2px;accent-color:var(--blue);width:14px;height:14px;flex-shrink:0;cursor:pointer}
+.pinfo{flex:1}
+.pn{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+.pi.on .pn{color:var(--blue)}
+.pd{font-size:11px;color:var(--text3);line-height:1.4}
+.pp{font-size:12px;font-weight:500;color:var(--text2);white-space:nowrap;margin-top:1px}
+.pi.on .pp{color:var(--blue)}
+.addon-list{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.ai{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all 0.15s;user-select:none}
+.ai.on{border-color:var(--green-border);background:var(--green-bg)}
+.ai input[type=checkbox]{accent-color:var(--green);width:14px;height:14px;flex-shrink:0;cursor:pointer}
+.an{font-size:12px;font-weight:500;color:var(--text);flex:1}
+.ai.on .an{color:var(--green)}
+.ap{font-size:12px;font-weight:500;color:var(--text2)}
+.ai.on .ap{color:var(--green)}
+.fee-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:11px 13px;border-radius:8px;background:var(--blue-bg);border:1px solid var(--blue-border);margin-bottom:10px}
+.fee-label{font-size:12px;color:var(--blue)}
+.fee-val{font-size:20px;font-weight:700;color:var(--blue);font-family:var(--mono)}
+.fee-val .strike{text-decoration:line-through;opacity:0.5;font-size:14px;margin-right:6px}
+.disc-row{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.disc-row label{font-size:12px;color:var(--amber);font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.disc-row input[type=checkbox]{accent-color:var(--amber);width:14px;height:14px;cursor:pointer}
+.disc-opts{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+.disc-btn{padding:3px 10px;border-radius:20px;border:1px solid var(--amber-border);background:transparent;font-size:11px;color:var(--amber);cursor:pointer;font-weight:500;font-family:var(--font);transition:all 0.15s}
+.disc-btn.on{background:var(--amber-bg);border-color:var(--amber)}
+.custom-price-row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.custom-price-row label{font-size:12px;color:var(--amber)}
+.cpi{font-size:15px;font-weight:500;font-family:var(--mono);background:transparent;border:none;border-bottom:1px solid var(--amber-border);color:var(--amber);width:110px;outline:none;padding:2px 0;-moz-appearance:textfield}
+.cpi::-webkit-inner-spin-button{-webkit-appearance:none}
+
+/* vertical presets */
+.vert-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.vert-btn{padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--font);transition:all 0.15s;white-space:nowrap}
+.vert-btn.on{border-color:var(--purple);background:rgba(139,92,246,0.08);color:var(--purple)}
+.vert-btn:hover:not(.on){border-color:var(--text3)}
+
+/* term selector */
+.term-row{display:flex;gap:5px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.term-label{font-size:12px;color:var(--text2);margin-right:4px}
+.term-btn{padding:5px 13px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text3);cursor:pointer;font-size:12px;font-weight:500;font-family:var(--font);transition:all 0.15s}
+.term-btn.on{border:2px solid var(--blue-border);background:var(--blue-bg);color:var(--blue)}
+
+/* TCV hero */
+.tcv-hero{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--radius);padding:14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+.tcv-label{font-size:11px;color:var(--blue);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px}
+.tcv-val{font-size:28px;font-weight:700;color:var(--blue);font-family:var(--mono)}
+.tcv-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.deal-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:14px}
+.dm{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px;text-align:center}
+.dm .dl{font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.3px}
+.dm .dv{font-size:18px;font-weight:600}
+.dm .dv.blue{color:var(--blue)}
+.dm .dv.green{color:var(--green)}
+.dm .ds{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* revenue share */
+.revshare-section{background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.15);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.revshare-title{font-size:11px;color:var(--purple);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.rs-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.rs-label{font-size:12px;color:var(--text2);min-width:80px}
+.rs-split{display:flex;gap:5px;align-items:center}
+.rs-pct-input{font-size:14px;font-weight:500;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);width:56px;text-align:center;outline:none;padding:4px 6px;-moz-appearance:textfield}
+.rs-pct-input::-webkit-inner-spin-button{-webkit-appearance:none}
+.rs-pct-input:focus{border-color:var(--purple)}
+
+/* usage fee */
+.usage-section{background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.15);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.usage-title{font-size:11px;color:var(--cyan);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+/* per-location table */
+.loc-wrap{overflow-x:auto;margin-bottom:14px}
+.loc-table{width:100%;border-collapse:collapse;font-size:11px}
+.loc-table th{text-align:right;color:var(--text3);font-weight:500;font-size:10px;padding:5px 8px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap}
+.loc-table th:first-child{text-align:left}
+.loc-table td{padding:9px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--text);font-weight:500}
+.loc-table td:first-child{text-align:left;color:var(--text2);font-weight:400}
+.loc-table tr.cur td{background:var(--blue-bg)}
+.loc-table tr.cur td:first-child{color:var(--blue);font-weight:500}
+.loc-table tr.best td{background:var(--green-bg)}
+.loc-table tr.best td:first-child{color:var(--green);font-weight:500}
+.loc-table td.gv{color:var(--green)}
+.loc-table td.rv{color:var(--red)}
+.lpill{display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;font-weight:500;margin-left:4px}
+.lpill-blue{background:var(--blue-bg);color:var(--blue)}
+.lpill-green{background:var(--green-bg);color:var(--green)}
+
+/* hidden ROI */
+.hr{background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.15);border-radius:var(--radius);padding:13px;margin-bottom:14px}
+.hr-t{font-size:11px;font-weight:500;color:var(--purple);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.hr-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:8px}
+.hs{background:var(--surface);border-radius:8px;padding:9px;text-align:center}
+.hs .hl{font-size:10px;color:var(--text3);margin-bottom:3px}
+.hs .hv{font-size:15px;font-weight:600;color:var(--purple)}
+.hs .hv.green{color:var(--green)}
+.hr-note{font-size:11px;color:var(--text2);line-height:1.6;text-align:center}
+
+/* implementation timeline */
+.timeline{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.timeline-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:12px}
+.timeline-steps{display:flex;gap:0;position:relative}
+.timeline-steps::before{content:'';position:absolute;top:16px;left:16px;right:16px;height:2px;background:var(--border)}
+.tstep{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:1}
+.tstep-dot{width:32px;height:32px;border-radius:50%;background:var(--surface);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--text3)}
+.tstep.done .tstep-dot{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.tstep-label{font-size:10px;color:var(--text3);text-align:center;line-height:1.3}
+.tstep-week{font-size:9px;color:var(--text3);text-align:center}
+
+/* contract summary */
+.contract{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.contract .ct{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:10px}
+.contract .row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px}
+.contract .row .k{color:var(--text2)}
+.contract .row .v{font-weight:500}
+.contract .row .v.green{color:var(--green)}
+.contract .row .v.blue{color:var(--blue)}
+.contract .row .v.amber{color:var(--amber)}
+.contract .row .v.purple{color:var(--purple)}
+
+/* ─── OBJECTION HANDLER TAB ─── */
+.obj-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px}
+.obj-tab{padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--text3);cursor:pointer;font-family:var(--font);transition:all 0.15s}
+.obj-tab.on{border-color:var(--red);background:var(--red-bg);color:var(--red)}
+.obj-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;display:none}
+.obj-card.show{display:block}
+.obj-objection{font-size:14px;font-weight:600;color:var(--red);margin-bottom:8px}
+.obj-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
+.obj-rebuttal{font-size:13px;color:var(--text2);line-height:1.7;background:var(--green-bg);border:1px solid var(--green-border);border-radius:8px;padding:12px;margin-bottom:12px}
+.obj-rebuttal strong{color:var(--green)}
+.obj-data{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.obj-stat{background:var(--surface2);border-radius:8px;padding:10px;text-align:center}
+.obj-stat .ol{font-size:10px;color:var(--text3);margin-bottom:3px}
+.obj-stat .ov{font-size:16px;font-weight:600}
+
+/* ─── PRINT STYLES ─── */
+@media print{
+  .tabs,.hbtn,.header-actions,.gen-section,.gen-btn,.gen-btn2,.dl-btn,.card-actions,
+  .cp-btn,.share-btn,.modal-bg,.toast,.sens-row{display:none!important}
+  .app{max-width:100%;padding:0}
+  body{background:#fff;color:#000}
+  .stat,.flow-box,.flow-highlight,.flow-cyan,.card-section,.pitch,.rv-section,.quota-bar{
+    background:#f9f9f9!important;border-color:#ddd!important;color:#000!important;break-inside:avoid}
+  .green,.val.green,.green,.cyan,.amber,.purple,.blue{color:#000!important}
+}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:640px){
+  .app{padding:14px 10px 40px}
+  .header{margin-bottom:16px;padding-bottom:14px}
+  .logo{font-size:20px}.logo span{font-size:11px;display:block;margin-left:0;margin-top:2px}
+  .tabs{gap:2px;padding:3px}.tab{padding:7px 4px;font-size:10px}
+  .inputs{grid-template-columns:1fr;gap:10px}.input-group.span2{grid-column:span 1}
+  .grid3,.grid4{grid-template-columns:1fr 1fr}
+  .deal-metrics{grid-template-columns:1fr 1fr}
+  .upside-grid{grid-template-columns:1fr 1fr}
+  .hr-g{grid-template-columns:1fr 1fr}
+  .flow{gap:5px}.flow-box,.flow-highlight,.flow-cyan{min-width:0;flex:1;padding:7px 5px}
+  .flow-box .val,.flow-highlight .val,.flow-cyan .val{font-size:15px}
+  .flow-box .label,.flow-highlight .label,.flow-cyan .label,.flow-highlight .sub,.flow-cyan .sub{font-size:9px}
+  .gen-row{flex-direction:column}.gen-input,.gen-btn,.gen-btn2{width:100%}
+  .card-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tcv-val{font-size:22px}
+  .timeline-steps{flex-wrap:wrap;gap:10px}.timeline-steps::before{display:none}
+  .tstep{flex-direction:row;align-items:center;gap:8px;width:100%;justify-content:flex-start}
+  .obj-data{grid-template-columns:1fr 1fr}
+  .loc-table{min-width:600px}
+}
+@media(max-width:380px){
+  .grid3,.grid4{grid-template-columns:1fr}
+  .flow{flex-direction:column;gap:4px}
+  .flow-arrow{transform:rotate(90deg)}
+  .tabs{flex-wrap:wrap}.tab{flex:none;width:calc(50% - 2px)}
+}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="app">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">Lucra<span>ROI Calculator</span></div>
+  <div class="header-actions">
+    <button class="hbtn" onclick="resetAll()" title="Reset all inputs (R)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 1 1 1.5 4"/><path d="M2 12V8h4"/></svg>Reset
+    </button>
+    <button class="hbtn" onclick="openShareModal()" title="Share (Cmd+S)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="3" r="1.5"/><circle cx="3" cy="8" r="1.5"/><circle cx="12" cy="13" r="1.5"/><line x1="4.5" y1="7" x2="10.5" y2="4"/><line x1="4.5" y1="9" x2="10.5" y2="12"/></svg>Share
+    </button>
+    <span class="hbtn-version">v3.0</span>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="T('roi',this)">ROI calculator</button>
+  <button class="tab" onclick="T('license',this)">Enterprise license</button>
+  <button class="tab" onclick="T('compare',this)">Scenarios</button>
+  <button class="tab" onclick="T('pricing',this)">Contract options</button>
+  <button class="tab" onclick="T('discount',this)">Discount lever</button>
+  <button class="tab" onclick="T('objections',this)">Objection handler</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ROI TAB -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="roi">
+  <div class="presets" id="presets"></div>
+
+  <!-- Sensitivity -->
+  <div class="sens-row">
+    <span class="sens-label">Sensitivity:</span>
+    <button class="sens-btn pessimistic" onclick="setSens('pessimistic',this)">Pessimistic</button>
+    <button class="sens-btn realistic on" onclick="setSens('realistic',this)">Realistic</button>
+    <button class="sens-btn optimistic" onclick="setSens('optimistic',this)">Optimistic</button>
+  </div>
+
+  <div class="scenarios">
+    <button class="scn" data-s="cons" onclick="SC('cons')">Ultra conservative</button>
+    <button class="scn" data-s="avg" onclick="SC('avg')">Average</button>
+    <button class="scn" data-s="case" onclick="SC('case')">Case study</button>
+  </div>
+
+  <div class="inputs">
+    <div class="input-group"><div class="input-head"><span class="input-label">Daily visitors</span><input class="vi" id="i-vis" type="number" min="0" step="1" oninput="I('vis')"></div><input type="range" min="50" max="3000" step="10" value="1100" id="s-vis" oninput="S('vis')"><div id="oc-vis"></div></div>
+    <div class="input-group"><div class="input-head"><span class="input-label">Current ARPU</span><div class="input-val"><span class="vp">$</span><input class="vi" id="i-arpu" type="number" min="0" step="0.25" oninput="I('arpu')"></div></div><input type="range" min="10" max="100" step="1" value="45" id="s-arpu" oninput="S('arpu')"></div>
+    <div class="input-group"><div class="input-head"><span class="input-label">Monthly Lucra fee</span><div class="input-val"><span class="vp">$</span><input class="vi" id="i-fee" type="number" min="0" step="1" oninput="I('fee')"></div></div><input type="range" min="500" max="5000" step="100" value="2500" id="s-fee" oninput="S('fee')"><div id="oc-fee"></div></div>
+    <div class="input-group"><div class="input-head"><span class="input-label">Opt-in rate</span><div class="input-val"><input class="vi" id="i-opt" type="number" min="0" step="0.25" oninput="I('opt')"><span class="vp">%</span></div></div><input type="range" min="3" max="40" step="1" value="10" id="s-opt" oninput="S('opt')"><div class="sn">Dylan: 5% floor, up to 40%</div></div>
+    <div class="input-group"><div class="input-head"><span class="input-label">ARPU lift</span><div class="input-val"><span class="vp">+</span><input class="vi" id="i-lift" type="number" min="0" step="0.25" oninput="I('lift')"><span class="vp">%</span></div></div><input type="range" min="5" max="30" step="1" value="15" id="s-lift" oninput="S('lift')"><div class="sn">Deck: +15%. Conservative: 10%</div></div>
+    <div class="input-group"><div class="input-head"><span class="input-label"># of locations</span><input class="vi" id="i-loc" type="number" min="1" step="1" value="1" oninput="I('loc')"></div><input type="range" min="1" max="100" step="1" value="1" id="s-loc" oninput="S('loc')"><div class="sn">Multi-location deal sizing</div></div>
+  </div>
+
+  <div class="input-group span2" style="margin-bottom:20px">
+    <div class="input-head"><span class="input-label">Current loyalty/marketing spend per location (optional)</span><div class="input-val"><span class="vp">$</span><input class="vi" id="i-loy" type="number" min="0" step="1000" value="0" oninput="I('loy')" style="width:90px"></div></div>
+    <input type="range" min="0" max="300000" step="5000" value="0" id="s-loy" oninput="S('loy')">
+    <div class="sn">Annual spend on loyalty, CRM, email. $50k–$200k typical</div>
+  </div>
+
+  <div class="section-label"><span class="dot" style="background:var(--purple)"></span>Visitor funnel</div>
+  <div class="flow" id="funnel"></div>
+  <div class="section-label"><span class="dot" style="background:var(--cyan)"></span>ARPU impact</div>
+  <div class="flow" id="arpu-flow"></div>
+  <div class="section-label"><span class="dot" style="background:var(--green)"></span>Revenue impact</div>
+  <div class="grid grid3" id="results"></div>
+  <div id="deal-size"></div>
+  <div class="section-label"><span class="dot" style="background:var(--amber)"></span>Break-even analysis</div>
+  <div id="breakeven"></div>
+  <div id="repeat-visit"></div>
+  <div id="loyalty-compare"></div>
+  <div class="pitch" id="pitch"></div>
+  <div id="quota-track"></div>
+
+  <!-- LEAVE-BEHIND -->
+  <div class="gen-section">
+    <div class="brand-fields">
+      <div class="brand-fields-title">Leave-behind generator</div>
+      <div class="brand-row" style="margin-bottom:10px">
+        <input class="gen-input" id="n-roi" placeholder="Company name (required)" oninput="syncName(this.value);checkPDFReady()" style="flex:1;min-width:130px">
+        <input class="gen-input" id="website-url" placeholder="Website URL" oninput="checkPDFReady()" onblur="onUrlBlur()" onkeydown="if(event.key==='Enter')onUrlBlur();" style="flex:1;min-width:130px">
+      </div>
+      <div class="brand-color-row">
+        <label>Brand color</label>
+        <input type="color" id="brand-color" value="#9DFF93" onchange="applyBrandColor(this.value)">
+        <span style="font-size:11px;color:var(--text3);margin-left:4px">Auto-detected from URL</span>
+        <button class="logo-url-btn" style="margin-left:auto" onclick="resetBrandColor()">Reset</button>
+      </div>
+      <div id="logo-drop-zone" class="logo-drop-zone" onclick="document.getElementById('logo-upload').click()" ondragover="logoDragOver(event)" ondragleave="logoDragLeave(event)" ondrop="logoDrop(event)">
+        <img id="logo-preview-img" class="logo-preview" style="display:none">
+        <div id="drop-placeholder" style="pointer-events:none">
+          <div class="drop-icon">🖼️</div>
+          <div class="drop-label"><strong>Drop logo here</strong> · click to browse · Ctrl+V paste</div>
+          <div class="drop-sub">PNG, JPG, SVG, WebP</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">💡 Logo + brand color auto-detect when you enter a website URL</div>
+      <div class="logo-url-row">
+        <input class="logo-url-input" id="logo-url-input" placeholder="Or paste image URL (https://...)">
+        <button class="logo-url-btn" onclick="loadLogoFromUrl()">Load</button>
+      </div>
+      <input type="file" id="logo-upload" accept="image/*" style="display:none" onchange="handleLogoUpload(this)">
+      <span id="logo-status" style="font-size:11px;display:block;margin-bottom:8px"></span>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;font-weight:500">Card template</div>
+      <div class="template-row">
+        <button class="tmpl-btn on" onclick="setTemplate('hero',this)">Hero number</button>
+        <button class="tmpl-btn" onclick="setTemplate('full',this)">Full breakdown</button>
+        <button class="tmpl-btn" onclick="setTemplate('scenarios',this)">3 scenarios</button>
+      </div>
+      <div class="theme-row">
+        <label>Theme</label>
+        <div class="theme-swatch on" style="background:#0a0a0b;border-color:var(--text)" onclick="setTheme('dark',this)" title="Dark"></div>
+        <div class="theme-swatch" style="background:#ffffff" onclick="setTheme('light',this)" title="Light"></div>
+      </div>
+      <div class="gen-row">
+        <button class="gen-btn" onclick="GEN('roi')" title="Cmd+G">Generate card</button>
+        <button class="gen-btn2" onclick="CPH('roi')">Copy HTML</button>
+        <button class="gen-btn2" id="pdf-btn" onclick="GENPDF()" disabled style="opacity:0.4;cursor:not-allowed">📄 PDF</button>
+        <button class="gen-btn2" onclick="openEmailDraft()">✉️ Email draft</button>
+      </div>
+      <div id="pdf-validation-msg" style="font-size:11px;color:var(--amber);margin-top:7px;display:none">⚠ Enter company name, URL, and logo to unlock PDF.</div>
+    </div>
+    <div class="card-wrap" id="w-roi">
+      <div class="card-actions"><button class="dl-btn" onclick="DL('roi')">Download image</button><span id="card-template-label" style="font-size:11px;color:var(--text3)"></span></div>
+      <div id="o-roi"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ENTERPRISE LICENSE TAB -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="license" style="display:none">
+
+  <!-- Vertical presets -->
+  <div class="section-label"><span class="dot" style="background:var(--purple)"></span>Vertical preset</div>
+  <div class="vert-row" id="vert-row">
+    <button class="vert-btn" onclick="setVert('minigolf',this)">⛳ Mini Golf</button>
+    <button class="vert-btn" onclick="setVert('bowling',this)">🎳 Bowling</button>
+    <button class="vert-btn" onclick="setVert('golf',this)">🏌️ Golf Entertainment</button>
+    <button class="vert-btn" onclick="setVert('arcade',this)">🕹️ Arcade / FEC</button>
+    <button class="vert-btn" onclick="setVert('sportsbar',this)">🍺 Sports Bar</button>
+    <button class="vert-btn" onclick="setVert('custom',this)">Custom</button>
+  </div>
+
+  <!-- Package builder -->
+  <div class="section-label"><span class="dot" style="background:var(--blue)"></span>Build your license package</div>
+  <div class="lic-builder">
+    <div class="lic-builder-title">Core packages — select one or more</div>
+    <div class="pkg-list">
+      <label class="pi" id="pi-A" onclick="tPkg('A',10000,this)">
+        <input type="checkbox" id="chk-A" onclick="event.stopPropagation()" onchange="tPkgChk('A',10000)">
+        <div class="pinfo"><div class="pn">Package A — API-only gaming wallet</div><div class="pd">Recreational games, user-generated competitions, API-only wallet. Full risk management toolkit.</div></div>
+        <div class="pp">$10,000/mo</div>
+      </label>
+      <label class="pi" id="pi-B" onclick="tPkg('B',10000,this)">
+        <input type="checkbox" id="chk-B" onclick="event.stopPropagation()" onchange="tPkgChk('B',10000)">
+        <div class="pinfo"><div class="pn">Package B — Client hosted tournaments</div><div class="pd">All of Package A plus hosted tournaments with admin portals, automated scoring, dispute management.</div></div>
+        <div class="pp">$10,000/mo</div>
+      </label>
+      <label class="pi on" id="pi-C" onclick="tPkg('C',15000,this)">
+        <input type="checkbox" id="chk-C" checked onclick="event.stopPropagation()" onchange="tPkgChk('C',15000)">
+        <div class="pinfo"><div class="pn">Package C — Full gamification suite</div><div class="pd">Custom game controls, real-time dashboard, revenue share infrastructure, complete risk toolkit.</div></div>
+        <div class="pp">$15,000/mo</div>
+      </label>
+    </div>
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px">Add-ons (prorated annually if added mid-term)</div>
+    <div class="addon-list">
+      <label class="ai" id="ai-rewards" onclick="tAddon('rewards',5000,this)">
+        <input type="checkbox" id="chk-rewards" onclick="event.stopPropagation()" onchange="tAddonChk('rewards',5000)">
+        <div class="an">Play-for-Rewards + loyalty integration</div><div class="ap">+$5,000/mo</div>
+      </label>
+      <label class="ai" id="ai-gift" onclick="tAddon('gift',5000,this)">
+        <input type="checkbox" id="chk-gift" onclick="event.stopPropagation()" onchange="tAddonChk('gift',5000)">
+        <div class="an">Convert winnings to client gift cards</div><div class="ap">+$5,000/mo</div>
+      </label>
+      <label class="ai" style="opacity:0.45;pointer-events:none">
+        <input type="checkbox" disabled>
+        <div class="an">Marketing analytics &amp; data insights</div><div class="ap" style="color:var(--text3)">Coming soon</div>
+      </label>
+    </div>
+    <div class="fee-row">
+      <div class="fee-label">List price monthly fee</div>
+      <div class="fee-val" id="lic-fee-val">$15,000/mo</div>
+    </div>
+
+    <!-- Discount override -->
+    <div class="disc-row" style="margin-top:8px">
+      <label onclick="toggleDisc()"><input type="checkbox" id="chk-disc" onclick="event.stopPropagation()"> Apply discount / custom price</label>
+      <div class="disc-opts" id="disc-opts" style="display:none">
+        <button class="disc-btn" onclick="setDisc(5,this)">5%</button>
+        <button class="disc-btn" onclick="setDisc(10,this)">10%</button>
+        <button class="disc-btn" onclick="setDisc(15,this)">15%</button>
+        <button class="disc-btn" onclick="setDisc(20,this)">20%</button>
+        <button class="disc-btn" onclick="setDisc('custom',this)">Custom $</button>
+      </div>
+    </div>
+    <div class="custom-price-row" id="custom-row" style="display:none">
+      <label>Override monthly price: $</label>
+      <input class="cpi" type="number" id="custom-price" min="0" step="500" placeholder="e.g. 12000" oninput="onCustomPrice(this.value)">
+      <span id="custom-savings" style="font-size:11px;color:var(--amber)"></span>
+    </div>
+  </div>
+
+  <!-- Contract term -->
+  <div class="section-label"><span class="dot" style="background:var(--blue)"></span>Contract term</div>
+  <div class="term-row">
+    <span class="term-label">Term length:</span>
+    <button class="term-btn on" id="term-1" onclick="setTerm(1,this)">1 year</button>
+    <button class="term-btn" id="term-2" onclick="setTerm(2,this)">2 years</button>
+    <button class="term-btn" id="term-3" onclick="setTerm(3,this)">3 years</button>
+  </div>
+
+  <!-- TCV Hero -->
+  <div class="tcv-hero" id="tcv-hero"></div>
+  <div class="deal-metrics" id="lic-deal-metrics"></div>
+
+  <!-- License deal inputs -->
+  <div class="section-label"><span class="dot" style="background:var(--text3)"></span>Deal inputs</div>
+  <div class="inputs">
+    <div class="input-group"><div class="input-head"><span class="input-label">Locations</span><input class="vi" id="li-loc" type="number" min="1" step="1" oninput="LI('loc')"></div><input type="range" min="1" max="100" step="1" value="20" id="ls-loc" oninput="LS('loc')"></div>
+    <div class="input-group"><div class="input-head"><span class="input-label">Daily visitors / location</span><input class="vi" id="li-vis" type="number" min="50" step="10" oninput="LI('vis')"></div><input type="range" min="50" max="3000" step="10" value="400" id="ls-vis" oninput="LS('vis')"></div>
+    <div class="input-group"><div class="input-head"><span class="input-label">Current ARPU</span><div class="input-val"><span class="vp">$</span><input class="vi" id="li-arpu" type="number" min="1" step="1" oninput="LI('arpu')"></div></div><input type="range" min="10" max="100" step="1" value="45" id="ls-arpu" oninput="LS('arpu')"></div>
+    <div class="input-group"><div class="input-head"><span class="input-label">Opt-in rate</span><div class="input-val"><input class="vi" id="li-opt" type="number" min="1" step="1" oninput="LI('opt')"><span class="vp">%</span></div></div><input type="range" min="3" max="40" step="1" value="10" id="ls-opt" oninput="LS('opt')"></div>
+    <div class="input-group"><div class="input-head"><span class="input-label">ARPU lift</span><div class="input-val"><span class="vp">+</span><input class="vi" id="li-lift" type="number" min="1" step="1" oninput="LI('lift')"><span class="vp">%</span></div></div><input type="range" min="5" max="30" step="1" value="15" id="ls-lift" oninput="LS('lift')"></div>
+  </div>
+
+  <!-- ARPU flow -->
+  <div class="section-label"><span class="dot" style="background:var(--green)"></span>ARPU impact per location</div>
+  <div class="flow" id="lic-arpu-flow"></div>
+
+  <!-- Per-location table -->
+  <div class="section-label"><span class="dot" style="background:var(--cyan)"></span>Per-location ROI — how the flat fee splits</div>
+  <div class="loc-wrap"><table class="loc-table">
+    <thead><tr>
+      <th style="text-align:left">Locations</th>
+      <th>Fee/loc</th><th>Users/day</th>
+      <th>Curr ARPU</th><th>Lucra ARPU</th>
+      <th>Mo. lift</th><th>Net/mo</th><th>ROI</th><th>Payback</th>
+    </tr></thead>
+    <tbody id="loc-tbody"></tbody>
+  </table></div>
+
+  <!-- Revenue share -->
+  <div class="revshare-section">
+    <div class="revshare-title"><span class="dot" style="background:var(--purple)"></span>Revenue share (optional)</div>
+    <div class="rs-row">
+      <span class="rs-label">Split</span>
+      <div class="rs-split">
+        <input class="rs-pct-input" id="rs-client" type="number" min="0" max="100" value="80" oninput="onRSChange('client',this.value)"> <span style="font-size:12px;color:var(--text2)">% Client</span>
+        &nbsp;/&nbsp;
+        <input class="rs-pct-input" id="rs-lucra" type="number" min="0" max="100" value="20" oninput="onRSChange('lucra',this.value)"> <span style="font-size:12px;color:var(--text2)">% Lucra</span>
+      </div>
+    </div>
+    <div class="grid grid3" id="rs-stats" style="margin-bottom:0"></div>
+  </div>
+
+  <!-- Usage fee -->
+  <div class="usage-section">
+    <div class="usage-title"><span class="dot" style="background:var(--cyan)"></span>Usage fee estimator (risk management toolkit)</div>
+    <div class="inputs" style="margin-bottom:10px">
+      <div class="input-group"><div class="input-head"><span class="input-label">Usage rate ($/user/mo)</span><div class="input-val"><span class="vp">$</span><input class="vi" id="usage-rate" type="number" min="0.1" max="1" step="0.05" value="0.40" oninput="renderLicense()"></div></div><input type="range" min="0.20" max="1.00" step="0.05" value="0.40" id="s-usage" oninput="this.previousElementSibling.querySelector('.vi').value=parseFloat(this.value).toFixed(2);document.getElementById('usage-rate').value=parseFloat(this.value).toFixed(2);renderLicense()"><div class="sn">Typically $0.20–$0.60. Capped at $1.00/user/mo</div></div>
+      <div class="input-group"><div class="input-head"><span class="input-label">Managed service fee</span><div class="input-val"><input class="vi" id="usage-msf" type="number" min="0" max="50" step="1" value="10" oninput="renderLicense()"><span class="vp">%</span></div></div><input type="range" min="0" max="50" step="1" value="10" id="s-msf" oninput="document.getElementById('usage-msf').value=this.value;renderLicense()"></div>
+    </div>
+    <div class="grid grid4" id="usage-stats" style="margin-bottom:0"></div>
+  </div>
+
+  <!-- Hidden ROI -->
+  <div class="hr">
+    <div class="hr-t"><span class="dot" style="background:var(--purple)"></span>Hidden ROI — repeat visit multiplier (not in ROI above)</div>
+    <div class="hr-g" id="lic-hr-grid"></div>
+    <div class="hr-note" id="lic-hr-note"></div>
+  </div>
+
+  <!-- Implementation timeline -->
+  <div class="timeline">
+    <div class="timeline-title">Implementation timeline — what happens after signing</div>
+    <div class="timeline-steps">
+      <div class="tstep done"><div class="tstep-dot">✓</div><div><div class="tstep-label">Kickoff</div><div class="tstep-week">Week 1</div></div></div>
+      <div class="tstep"><div class="tstep-dot">2</div><div><div class="tstep-label">Brand &amp; config</div><div class="tstep-week">Week 2–3</div></div></div>
+      <div class="tstep"><div class="tstep-dot">3</div><div><div class="tstep-label">Integration</div><div class="tstep-week">Week 4–6</div></div></div>
+      <div class="tstep"><div class="tstep-dot">4</div><div><div class="tstep-label">Soft launch</div><div class="tstep-week">Week 7–8</div></div></div>
+      <div class="tstep"><div class="tstep-dot">5</div><div><div class="tstep-label">Full go-live</div><div class="tstep-week">Week 10</div></div></div>
+    </div>
+  </div>
+
+  <!-- Contract summary -->
+  <div class="contract" id="lic-contract"></div>
+
+  <!-- Pitch -->
+  <div class="section-label"><span class="dot" style="background:var(--green)"></span>Pitch line</div>
+  <div class="pitch" id="lic-pitch"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- SCENARIOS TAB -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="compare" style="display:none">
+  <p style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.6">"Even if we don't hit our case study numbers, this is what the ROI looks like at every scenario."</p>
+  <div id="scenario-compare"></div>
+  <div class="pitch" id="cmp-pitch"></div>
+  <div class="warn">These numbers do NOT include the +110% repeat visit lift. D&B: 1.4x/yr → with Lucra ~3x/yr.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- CONTRACT OPTIONS TAB -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="pricing" style="display:none">
+  <div class="input-group" style="margin-bottom:18px"><div class="input-head"><span class="input-label">Monthly fee (base)</span><div class="input-val"><span class="vp">$</span><input class="vi" id="i-pfee" type="number" min="0" step="1" oninput="I('pfee')"></div></div><input type="range" min="500" max="50000" step="500" value="2500" id="s-pfee" oninput="S('pfee')"><div id="oc-pfee"></div></div>
+  <div class="pg" id="pr-cards"></div>
+  <div class="gen-section"><div class="gen-row"><input class="gen-input" id="n-pricing" placeholder="Venue name"><button class="gen-btn" onclick="GEN('pricing')">Generate pricing card</button><button class="gen-btn2" onclick="CPH('pricing')">Copy HTML</button></div><div class="card-wrap" id="w-pricing"><div class="card-actions"><button class="dl-btn" onclick="DL('pricing')">Download</button></div><div id="o-pricing"></div></div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- DISCOUNT TAB -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="discount" style="display:none">
+  <p style="font-size:13px;color:var(--text2);margin-bottom:7px;line-height:1.6">What happens to deal economics when you offer a discount?</p>
+  <p style="font-size:11px;color:var(--text3);margin-bottom:18px" id="d-ctx"></p>
+  <div class="section-label"><span class="dot" style="background:var(--amber)"></span>Venue perspective</div><div class="grid grid4" id="d-venue"></div>
+  <div class="section-label"><span class="dot" style="background:var(--purple)"></span>Your commission impact</div><div class="grid grid4" id="d-comm"></div>
+  <div class="pitch" id="d-pitch" style="margin-top:4px"></div>
+  <div class="gen-section"><div class="gen-row"><input class="gen-input" id="n-discount" placeholder="Venue name"><button class="gen-btn" onclick="GEN('discount')">Generate discount card</button><button class="gen-btn2" onclick="CPH('discount')">Copy HTML</button></div><div class="card-wrap" id="w-discount"><div class="card-actions"><button class="dl-btn" onclick="DL('discount')">Download</button></div><div id="o-discount"></div></div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- OBJECTION HANDLER TAB -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="objections" style="display:none">
+  <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">Select the objection you're hearing — get a data-driven rebuttal tied to your current calculator numbers.</p>
+  <div class="obj-tabs">
+    <button class="obj-tab on" onclick="showObj('loyalty',this)">We have loyalty</button>
+    <button class="obj-tab" onclick="showObj('optin',this)">Won't opt in</button>
+    <button class="obj-tab" onclick="showObj('cost',this)">Too expensive</button>
+    <button class="obj-tab" onclick="showObj('timing',this)">Bad timing</button>
+    <button class="obj-tab" onclick="showObj('roi',this)">Prove the ROI</button>
+    <button class="obj-tab" onclick="showObj('competitor',this)">Using a competitor</button>
+  </div>
+  <div id="obj-cards"></div>
+</div>
+
+</div><!-- /.app -->
+
+<!-- SHARE MODAL -->
+<div id="share-modal" style="display:none">
+  <div class="modal-bg" onclick="if(event.target===this)closeShareModal()">
+    <div class="modal">
+      <h3>Share this calculator <button class="modal-close" onclick="closeShareModal()">✕</button></h3>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Pre-filled link with current inputs — perfect for forwarding internally.</p>
+      <div class="modal-url" id="share-url-display">Generating...</div>
+      <div class="modal-actions">
+        <button class="modal-btn primary" onclick="copyShareUrl()">Copy link</button>
+        <button class="modal-btn" onclick="closeShareModal()">Close</button>
+      </div>
+      <div class="email-draft">
+        <label>Email draft</label>
+        <textarea id="email-textarea" readonly></textarea>
+        <div style="display:flex;gap:7px;margin-top:7px">
+          <button class="modal-btn primary" onclick="copyEmailDraft()">Copy email</button>
+          <button class="modal-btn" onclick="openMailto()">Open in mail</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+var P=[
+  {n:'Puttshack',v:1100,a:45,f:2500,l:16},
+  {n:"Dave & Buster's",v:375,a:45,f:2000,l:220},
+  {n:'Topgolf',v:2500,a:38,f:2500,l:89},
+  {n:'Bowlero',v:300,a:40,f:2000,l:360},
+  {n:'Five Iron Golf',v:120,a:30,f:1500,l:50},
+  {n:'PopStroke',v:400,a:35,f:2000,l:12},
+  {n:'Avg Bowling',v:175,a:25,f:1500,l:1},
+  {n:'Custom',v:200,a:30,f:1500,l:1}
+];
+var SCNS={cons:{opt:5,lift:10},avg:{opt:20,lift:12.5},case:{opt:40,lift:15}};
+var SENS={pessimistic:{opt:-3,lift:-4},realistic:{opt:0,lift:0},optimistic:{opt:8,lift:5}};
+var curSens='realistic';
+var sel=0,curScn='';
+var V={vis:1100,arpu:45,fee:2500,opt:10,lift:15,pfee:2500,loc:1,loy:0};
+
+/* Enterprise license state */
+var pkgs={A:false,B:false,C:true};
+var addons={rewards:false,gift:false};
+var LV={loc:20,vis:400,arpu:45,opt:10,lift:15};
+var discActive=false,discPct=0,customOverride=null,termYrs=1;
+
+var uploadedLogoDataUrl='',cardTemplate='hero',cardTheme='dark',brandColor='#9DFF93';
+
+function $(id){return document.getElementById(id)}
+function F(n){return '$'+Math.round(n).toLocaleString()}
+function fq(n){return n%1===0?''+n:n.toFixed(2)}
+function ap_(){return V.arpu%1===0?'$'+V.arpu:'$'+fq(V.arpu)}
+
+/* ── TOAST ── */
+function toast(msg,dur){
+  var t=$('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show')},dur||1800);
+}
+
+/* ── NAME SYNC across all tabs ── */
+function syncName(val){
+  ['n-pricing','n-discount'].forEach(function(id){if($(id))$(id).value=val});
+}
+
+/* ── URL PARAMS ── */
+(function loadFromURL(){
+  var p=new URLSearchParams(location.search);
+  ['vis','arpu','fee','opt','lift','loc','loy','pfee'].forEach(function(k){if(p.get(k)!==null)V[k]=parseFloat(p.get(k))||V[k]});
+  if(p.get('name'))setTimeout(function(){['n-roi','n-pricing','n-discount'].forEach(function(x){if($(x))$(x).value=decodeURIComponent(p.get('name'))})},100);
+})();
+
+/* ── PRESETS ── */
+function initP(){
+  $('presets').innerHTML=P.map(function(p,i){
+    return '<button class="preset'+(i===sel?' on':'')+'" onclick="pk('+i+')">'+p.n+'</button>';
+  }).join('');
+}
+function pk(i){
+  sel=i;V.vis=P[i].v;V.arpu=P[i].a;V.fee=P[i].f;V.pfee=P[i].f;V.loc=P[i].l;
+  var nm=P[i].n;
+  ['n-roi','n-pricing','n-discount'].forEach(function(x){if($(x))$(x).value=nm});
+  sync();initP();U();
+}
+
+/* ── SCENARIOS ── */
+function SC(k){
+  if(curScn===k){curScn='';document.querySelectorAll('.scn').forEach(function(b){b.classList.remove('on')});U();return}
+  curScn=k;V.opt=SCNS[k].opt;V.lift=SCNS[k].lift;sync();
+  document.querySelectorAll('.scn').forEach(function(b){b.classList.toggle('on',b.dataset.s===k)});U();
+}
+
+/* ── SENSITIVITY ── */
+function setSens(k,btn){
+  curSens=k;
+  document.querySelectorAll('.sens-btn').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  /* Apply deltas */
+  var d=SENS[k];
+  V.opt=Math.max(3,Math.min(40,(V.opt+d.opt)));
+  V.lift=Math.max(5,Math.min(30,(V.lift+d.lift)));
+  sync();U();
+  toast({pessimistic:'Pessimistic applied',realistic:'Realistic applied',optimistic:'Optimistic applied'}[k]);
+}
+
+/* ── SYNC / CAPS ── */
+function sync(){
+  ['vis','arpu','fee','opt','lift','loc','loy'].forEach(function(k){
+    if($('s-'+k)){$('s-'+k).value=Math.min(+$('s-'+k).max,Math.max(+$('s-'+k).min,Math.round(V[k])));$('i-'+k).value=V[k]}
+  });
+  if($('s-pfee')){$('s-pfee').value=Math.min(50000,Math.max(500,Math.round(V.pfee)));$('i-pfee').value=Math.round(V.pfee)}
+  checkCaps();
+}
+function checkCaps(){
+  [{k:'vis',id:'oc-vis',max:3000},{k:'fee',id:'oc-fee',max:5000},{k:'pfee',id:'oc-pfee',max:50000}].forEach(function(c){
+    if($(c.id))$(c.id).innerHTML=V[c.k]>c.max?'<div class="over-cap">Custom value above slider max</div>':'';
+  });
+}
+function S(k){V[k]=+$('s-'+k).value;if(k==='fee')V.pfee=V[k];if(k==='pfee')V.fee=V[k];$('i-'+k).value=V[k];if(k==='opt'||k==='lift'){curScn='';document.querySelectorAll('.scn').forEach(function(b){b.classList.remove('on')})}checkCaps();U()}
+function I(k){var raw=$('i-'+k).value;if(raw===''||raw==='-')return;var v=parseFloat(raw);if(isNaN(v)||v<0)return;V[k]=v;if(k==='fee')V.pfee=v;if(k==='pfee')V.fee=v;var sr=$('s-'+k);if(sr)sr.value=Math.max(+sr.min,Math.min(+sr.max,Math.round(v)));if(k==='opt'||k==='lift'){curScn='';document.querySelectorAll('.scn').forEach(function(b){b.classList.remove('on')})}checkCaps();U()}
+
+/* ── RESET ── */
+function resetAll(){
+  V={vis:1100,arpu:45,fee:2500,opt:10,lift:15,pfee:2500,loc:1,loy:0};
+  curScn='';curSens='realistic';
+  document.querySelectorAll('.scn').forEach(function(b){b.classList.remove('on')});
+  document.querySelectorAll('.sens-btn').forEach(function(b){b.classList.remove('on')});
+  document.querySelector('.sens-btn.realistic').classList.add('on');
+  uploadedLogoDataUrl='';
+  var pi=$('logo-preview-img'),ph=$('drop-placeholder'),dz=$('logo-drop-zone'),st=$('logo-status');
+  if(pi){pi.style.display='none';pi.src=''}
+  if(ph)ph.style.display='block';
+  if(dz)dz.classList.remove('has-logo');
+  if(st)st.textContent='';
+  ['n-roi','n-pricing','n-discount'].forEach(function(x){if($(x))$(x).value=''});
+  sync();initP();U();toast('Reset to defaults');
+}
+
+/* ── TABS ── */
+function T(id,b){
+  ['roi','license','compare','pricing','discount','objections'].forEach(function(t){$(t).style.display=t===id?'block':'none'});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+  b.classList.add('active');
+  if(id==='pricing')sync();
+  if(id==='license'){syncLicenseInputs();renderLicense();}
+  if(id==='objections')renderObjections();
+  U();
+}
+
+/* ── CORE CALC ── */
+function C(vis,arpu,fee,optPct,liftPct){
+  var opt=optPct/100,lift=liftPct/100,al=arpu*lift,la=arpu+al;
+  var du=Math.round(vis*opt),mu=du*30,mr=du*al*30,nm=mr-fee,ar=nm*12;
+  var bu=al>0?Math.ceil(fee/(al*30)):Infinity;
+  var bv=opt>0?Math.ceil(bu/opt):Infinity;
+  var bePct=al>0?(fee/(al*30*vis)*100):Infinity;
+  var rx=fee>0?(mr/fee).toFixed(1):'0';
+  var pb=mr>0?Math.round(fee/(mr/30)*10)/10:Infinity;
+  return{arpu:arpu,lucraARPU:la,arpuLift:al,dailyUsers:du,moUsers:mu,moRev:mr,netMo:nm,annROI:ar,brkUsers:bu,brkVis:bv,bePct:bePct,roiX:rx,paybackDays:pb};
+}
+
+function CP(id){var el=$(id);if(!el)return;var txt=el.innerText.replace(/^Copy\n?/,'').replace(/Copied!\n?/,'');navigator.clipboard.writeText(txt);var btn=el.querySelector('.cp-btn');if(btn){btn.textContent='Copied!';btn.classList.add('done');setTimeout(function(){btn.textContent='Copy';btn.classList.remove('done')},2000)}}
+
+/* ══════════════════════════════════════════════════
+   MAIN UPDATE
+══════════════════════════════════════════════════ */
+function U(){
+  var vis=V.vis,arpu=V.arpu,fee=V.fee,optPct=V.opt,liftPct=V.lift,pfee=V.pfee;
+  var loc=Math.max(1,Math.round(V.loc)),loy=V.loy;
+  var r=C(vis,arpu,fee,optPct,liftPct),lp=fq(liftPct),op=fq(optPct),ap=ap_();
+  var baseFreq=1.4,newFreq=3.0,extraVisits=newFreq-baseFreq;
+  var annRepeatPerUser=extraVisits*arpu,annLucraCustomers=Math.round(r.dailyUsers*365*0.3);
+
+  /* Funnel */
+  $('funnel').innerHTML='<div class="flow-box"><div class="label">Daily visitors</div><div class="val">'+Math.round(vis).toLocaleString()+'</div></div><div class="flow-arrow">×</div><div class="flow-box"><div class="label">Opt-in rate</div><div class="val" style="color:var(--purple)">'+op+'%</div></div><div class="flow-arrow">=</div><div class="flow-cyan"><div class="label">Daily Lucra users</div><div class="val">'+r.dailyUsers.toLocaleString()+'</div><div class="sub">'+r.moUsers.toLocaleString()+'/mo</div></div>';
+
+  /* ARPU flow */
+  $('arpu-flow').innerHTML='<div class="flow-box"><div class="label">Current ARPU</div><div class="val">'+ap+'</div></div><div class="flow-arrow">×</div><div class="flow-box"><div class="label">+'+lp+'% lift</div><div class="val" style="color:var(--amber)">+$'+r.arpuLift.toFixed(2)+'</div></div><div class="flow-arrow">=</div><div class="flow-highlight"><div class="label">Lucra ARPU</div><div class="val">$'+r.lucraARPU.toFixed(2)+'</div><div class="sub">Per competing user</div></div>';
+
+  /* Results */
+  $('results').innerHTML='<div class="stat"><div class="label">Monthly revenue lift</div><div class="val green">'+F(r.moRev)+'</div><div class="sub">'+r.dailyUsers+' × $'+r.arpuLift.toFixed(2)+' × 30d</div></div><div class="stat"><div class="label">Net monthly ROI</div><div class="val '+(r.netMo>0?'green':'red')+'">'+F(r.netMo)+'</div><div class="sub">'+r.roiX+'x return</div></div><div class="stat"><div class="label">Annual net ROI</div><div class="val '+(r.annROI>0?'green':'red')+'">'+F(r.annROI)+'</div></div>';
+
+  /* Deal size */
+  if(loc>1)$('deal-size').innerHTML='<div class="section-label"><span class="dot" style="background:var(--blue)"></span>Multi-location deal ('+loc+' locations)</div><div class="grid grid4" style="margin-bottom:18px"><div class="stat"><div class="label">Total MRR</div><div class="val" style="color:var(--blue)">'+F(fee*loc)+'</div></div><div class="stat"><div class="label">Total ARR</div><div class="val" style="color:var(--blue)">'+F(fee*loc*12)+'</div></div><div class="stat"><div class="label">Monthly lift (all)</div><div class="val green">'+F(r.moRev*loc)+'</div></div><div class="stat"><div class="label">Annual net (all)</div><div class="val green">'+F(r.annROI*loc)+'</div></div></div>';
+  else $('deal-size').innerHTML='';
+
+  /* Break-even enhanced */
+  var bePct=r.bePct,beIsLow=bePct!==Infinity&&bePct<5;
+  var beFillPct=bePct===Infinity?100:Math.min(100,(bePct/40)*100);
+  var curFillPct=Math.min(100,(optPct/40)*100);
+  var badgeTxt=bePct===Infinity?'Cannot break even':bePct<2?'Extremely easy':bePct<5?'Very easy to hit':bePct<10?'Achievable':bePct<20?'Moderate':'Challenging';
+  var badgeClass=bePct<5?'be-badge-green':'be-badge-amber';
+  var beLabel=bePct===Infinity?'Cannot break even':(bePct%1===0?bePct:bePct.toFixed(1))+'% adoption needed';
+  var upsideHtml='';
+  if(beIsLow){
+    var cards=[5,10,15,20].map(function(t){
+      var tr=C(vis,arpu,fee,t,liftPct),nc=tr.netMo>0?'var(--green)':'var(--red)',isFloor=t===5;
+      return'<div class="upside-card">'+(isFloor?'<div class="upside-tag floor">min floor</div>':'')+
+        '<div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:2px">'+t+'%</div>'+
+        '<div style="font-size:10px;color:var(--text3);margin-bottom:6px">'+Math.round(vis*t/100)+' users/day</div>'+
+        '<div style="font-size:16px;font-weight:600;color:'+nc+'">'+F(tr.netMo)+'</div>'+
+        '<div style="font-size:9px;color:var(--text3);margin-bottom:2px">net/mo</div>'+
+        '<div style="font-size:10px;color:var(--text3)">'+tr.roiX+'x · '+F(tr.annROI)+'/yr</div></div>';
+    }).join('');
+    upsideHtml='<div class="upside-section"><div class="upside-hd"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;flex-shrink:0"></span>Upside at each adoption tier — break-even is below 5%</div><div class="upside-grid">'+cards+'</div></div>';
+  }
+  $('breakeven').innerHTML=
+    '<div class="be-hero"><div class="be-hero-top"><div><div class="be-label">Break-even adoption needed</div><div class="be-main">'+beLabel+'</div><div class="be-sub">'+(r.brkVis===Infinity?'—':r.brkVis+' visitors → '+r.brkUsers+' users/day')+' · You have '+Math.round(vis).toLocaleString()+' daily visitors</div></div><span class="be-badge '+badgeClass+'">'+badgeTxt+'</span></div>'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><div class="be-track"><div class="be-fill'+(bePct<5?' low':'')+'" style="width:'+beFillPct+'%"></div>'+
+    (bePct!==Infinity&&bePct<40?'<div class="be-marker" style="left:'+beFillPct+'%;background:rgba(245,158,11,0.5)"><div class="be-marker-lbl" style="color:var(--amber)">break-even</div></div>':'')+
+    '<div class="be-marker" style="left:'+curFillPct+'%;background:rgba(6,182,212,0.6)"><div class="be-marker-lbl" style="color:var(--cyan)">current ('+op+'%)</div></div></div>'+
+    '<span style="font-size:11px;color:var(--text3);white-space:nowrap;margin-left:4px">0–40%</span></div>'+
+    '<div class="be-ticks">'+['0%','5%','10%','20%','30%','40%'].map(function(p){return'<span class="be-tick">'+p+'</span>'}).join('')+'</div></div>'+
+    '<div class="grid grid4" style="margin-bottom:'+(upsideHtml?'10px':'18px')+'">'+
+    '<div class="stat"><div class="label">Min daily visitors</div><div class="val amber">'+(r.brkVis===Infinity?'—':r.brkVis)+'</div><div class="sub">You have '+vis.toLocaleString()+'</div></div>'+
+    '<div class="stat"><div class="label">Min Lucra users</div><div class="val cyan">'+(r.brkUsers===Infinity?'—':r.brkUsers)+'</div><div class="sub">At '+op+'% opt-in</div></div>'+
+    '<div class="stat"><div class="label">ARPU lift/user</div><div class="val">$'+r.arpuLift.toFixed(2)+'</div><div class="sub">'+lp+'% on '+ap+'</div></div>'+
+    '<div class="stat"><div class="label">Payback period</div><div class="val green">'+(r.paybackDays===Infinity?'—':r.paybackDays+' days')+'</div><div class="sub">Lucra pays for itself</div></div></div>'+
+    upsideHtml;
+
+  /* Repeat visit */
+  $('repeat-visit').innerHTML='<div class="rv-section"><div class="section-label" style="margin-bottom:10px"><span class="dot" style="background:var(--purple)"></span>Repeat visit multiplier (the hidden ROI)</div><div class="grid grid4"><div class="stat"><div class="label">Current frequency</div><div class="val">'+baseFreq+'x/yr</div><div class="sub">D&B benchmark</div></div><div class="stat"><div class="label">With Lucra</div><div class="val purple">'+newFreq.toFixed(1)+'x/yr</div><div class="sub">+110% lift</div></div><div class="stat"><div class="label">Extra visits/yr</div><div class="val purple">+'+extraVisits.toFixed(1)+'</div><div class="sub">Per customer</div></div><div class="stat"><div class="label">Rev/customer/yr</div><div class="val green">'+F(annRepeatPerUser)+'</div><div class="sub">Repeat visits alone</div></div></div><div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center">~'+annLucraCustomers.toLocaleString()+' unique Lucra customers/yr × '+F(annRepeatPerUser)+' = <strong style="color:var(--green)">'+F(annRepeatPerUser*annLucraCustomers)+'/yr</strong> in repeat-visit revenue (not included above)</div></div>';
+
+  /* Loyalty compare */
+  if(loy>0){var lucCost=fee*12,savings=loy-lucCost;$('loyalty-compare').innerHTML='<div class="section-label"><span class="dot" style="background:var(--pink)"></span>Lucra vs current loyalty spend</div><div class="grid grid3" style="margin-bottom:18px"><div class="stat"><div class="label">Current annual spend</div><div class="val red">'+F(loy)+'</div><div class="sub">1-3% adoption</div></div><div class="stat"><div class="label">Lucra annual cost</div><div class="val green">'+F(lucCost)+'</div><div class="sub">'+op+'% adoption</div></div><div class="stat"><div class="label">'+(savings>0?'Savings':'Additional cost')+'</div><div class="val '+(savings>0?'green':'amber')+'">'+F(Math.abs(savings))+'</div><div class="sub">'+(savings>0?'Cheaper + higher adoption':'But more adoption')+'</div></div></div>'}else $('loyalty-compare').innerHTML='';
+
+  /* Pitch with risk reversal */
+  var riskLine=bePct!==Infinity&&bePct<3?' Even at just '+bePct.toFixed(1)+'% adoption you break even — that\'s '+r.brkUsers+' people per day.':'';
+  var pitchTxt='You get '+vis.toLocaleString()+' visitors a day. At '+op+'% opt-in that\'s '+r.dailyUsers+' competing through Lucra — '+r.moUsers.toLocaleString()+'/mo. Each spends $'+r.arpuLift.toFixed(2)+' more, lifting ARPU from '+ap+' to $'+r.lucraARPU.toFixed(2)+'. That\'s '+F(r.moRev)+'/mo on a '+F(fee)+' fee — '+r.roiX+'x return. Lucra pays for itself in '+r.paybackDays+' days.'+riskLine+(loc>1?' Across '+loc+' locations: '+F(fee*loc)+' MRR / '+F(fee*loc*12)+' ARR.':'');
+  $('pitch').innerHTML='<button class="cp-btn" onclick="CP(\'pitch\')">Copy</button><strong>Pitch:</strong> "'+pitchTxt+'"';
+
+  /* Quota */
+  var quotaARR=fee*loc*12,quotaPct=Math.min(100,(quotaARR/1500000*100)),dealsNeeded=quotaARR>0?Math.ceil(1500000/quotaARR):0;
+  $('quota-track').innerHTML='<div class="quota-bar"><div class="hd"><span>Quota impact (internal)</span><span style="font-weight:500">'+F(quotaARR)+' / $1.5M ARR</span></div><div class="qb-track"><div class="qb-fill" style="width:'+quotaPct+'%"></div></div><div class="qb-stats"><span>'+quotaPct.toFixed(1)+'% of annual quota</span><span>Need '+dealsNeeded+' deals at this size</span></div></div>';
+
+  /* Scenarios tab */
+  var rc=C(vis,arpu,fee,5,10),ra=C(vis,arpu,fee,20,12.5),rcs=C(vis,arpu,fee,40,15);
+  $('scenario-compare').innerHTML='<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px">'+
+    ['<div class="card-section" style="border-color:rgba(245,158,11,0.3)"><div class="ct amber">Ultra-conservative</div><div class="cr"><span class="k">Opt-in / Lift</span><span class="v">5% / 10%</span></div><div class="cr"><span class="k">Users/day</span><span class="v">'+rc.dailyUsers+'</span></div><div class="cr"><span class="k">ARPU</span><span class="v">'+ap+' → $'+rc.lucraARPU.toFixed(2)+'</span></div><div class="sep"></div><div class="cr"><span class="k">Monthly lift</span><span class="v green">'+F(rc.moRev)+'</span></div><div class="cr"><span class="k">Net monthly</span><span class="v '+(rc.netMo>0?'green':'red')+'">'+F(rc.netMo)+'</span></div><div class="cr"><span class="k">Payback</span><span class="v">'+(rc.paybackDays===Infinity?'—':rc.paybackDays+'d')+'</span></div><div class="cr"><span class="k">ROI</span><span class="v '+(parseFloat(rc.roiX)>=1?'green':'red')+'">'+rc.roiX+'x</span></div></div>',
+    '<div class="card-section" style="border-color:rgba(59,130,246,0.3)"><div class="ct" style="color:var(--blue)">Average</div><div class="cr"><span class="k">Opt-in / Lift</span><span class="v">20% / 12.5%</span></div><div class="cr"><span class="k">Users/day</span><span class="v">'+ra.dailyUsers+'</span></div><div class="cr"><span class="k">ARPU</span><span class="v">'+ap+' → $'+ra.lucraARPU.toFixed(2)+'</span></div><div class="sep"></div><div class="cr"><span class="k">Monthly lift</span><span class="v green">'+F(ra.moRev)+'</span></div><div class="cr"><span class="k">Net monthly</span><span class="v green">'+F(ra.netMo)+'</span></div><div class="cr"><span class="k">Payback</span><span class="v">'+ra.paybackDays+'d</span></div><div class="cr"><span class="k">ROI</span><span class="v green">'+ra.roiX+'x</span></div></div>',
+    '<div class="card-section" style="border-color:rgba(16,185,129,0.3)"><div class="ct green">Case study</div><div class="cr"><span class="k">Opt-in / Lift</span><span class="v">40% / 15%</span></div><div class="cr"><span class="k">Users/day</span><span class="v">'+rcs.dailyUsers+'</span></div><div class="cr"><span class="k">ARPU</span><span class="v">'+ap+' → $'+rcs.lucraARPU.toFixed(2)+'</span></div><div class="sep"></div><div class="cr"><span class="k">Monthly lift</span><span class="v green">'+F(rcs.moRev)+'</span></div><div class="cr"><span class="k">Net monthly</span><span class="v green">'+F(rcs.netMo)+'</span></div><div class="cr"><span class="k">Payback</span><span class="v">'+rcs.paybackDays+'d</span></div><div class="cr"><span class="k">ROI</span><span class="v green">'+rcs.roiX+'x</span></div></div>'
+  ].join('')+'</div>';
+  $('cmp-pitch').innerHTML='<button class="cp-btn" onclick="CP(\'cmp-pitch\')">Copy</button><strong>Pitch:</strong> "Even at 5% opt-in and 10% lift, Lucra generates '+F(rc.moRev)+'/mo, payback in '+(rc.paybackDays===Infinity?'N/A':rc.paybackDays+' days')+'. Average: '+F(ra.moRev)+'/mo. Case study: '+F(rcs.moRev)+'/mo. The math works at every level."';
+
+  /* Pricing tab */
+  var po=[{t:'13-mo annual',sub:'Monthly pay',tm:13,fm:1,pm:12},{t:'14-mo annual',sub:'Upfront',tm:14,fm:2,pm:12},{t:'25-mo 2-year',sub:'Monthly pay',tm:25,fm:2,pm:23},{t:'26-mo 2-year',sub:'Upfront',tm:26,fm:4,pm:22}];
+  var pc=['var(--blue)','var(--green)','var(--purple)','var(--amber)'];
+  $('pr-cards').innerHTML=po.map(function(o,i){var tot=pfee*o.pm,eff=Math.round(tot/o.tm),disc=pfee>0?((1-eff/pfee)*100).toFixed(1):'0',saves=pfee*o.tm-tot;
+    return'<div class="card-section"><div class="ct" style="color:'+pc[i]+'">'+o.t+'</div><div style="font-size:11px;color:var(--text3);margin-bottom:8px">'+o.sub+'</div><div class="cr"><span class="k">Months</span><span class="v">'+o.tm+' ('+o.fm+' free)</span></div><div class="cr"><span class="k">Contract</span><span class="v">$'+tot.toLocaleString()+'</span></div><div class="cr"><span class="k">Eff. rate</span><span class="v">$'+eff.toLocaleString()+'/mo</span></div><div class="pf"><span class="green" style="font-size:12px;font-weight:500">Saves $'+saves.toLocaleString()+'</span><span class="badge" style="background:rgba(16,185,129,0.1);color:var(--green)">'+disc+'% off</span></div></div>';
+  }).join('');
+
+  /* Discount tab */
+  $('d-ctx').textContent=vis.toLocaleString()+' visitors → '+r.dailyUsers+' users/day ('+op+'%), '+ap+' ARPU, +'+lp+'% lift, '+F(fee)+'/mo'+(loc>1?' × '+loc+' locations':'');
+  var ds=[5,10,15,20];
+  $('d-venue').innerHTML=ds.map(function(d){var df=Math.round(fee*(1-d/100)),dr=C(vis,arpu,df,optPct,liftPct),vs=(fee-df)*12*loc;
+    return'<div class="dc'+(d===10?' best':'')+'">'+(d===10?'<div class="rb">sweet spot</div>':'')+
+      '<div class="pct amber">'+d+'% off</div><div class="fee">'+F(df)+'/mo</div>'+
+      '<div class="row"><span class="k">ROI</span><span class="v green">'+dr.roiX+'x</span></div>'+
+      '<div class="row"><span class="k">Net/mo</span><span class="v '+(dr.netMo>0?'green':'red')+'">'+F(dr.netMo)+'</span></div>'+
+      '<div class="row"><span class="k">Payback</span><span class="v">'+dr.paybackDays+'d</span></div>'+
+      '<div class="row"><span class="k">Saves</span><span class="v">'+F(vs)+'/yr'+(loc>1?' (all)':'')+'</span></div></div>';
+  }).join('');
+  $('d-comm').innerHTML=ds.map(function(d){var df=Math.round(fee*(1-d/100)),arr=df*12*loc,pq=((arr/1500000)*100).toFixed(1),cm2=Math.round(arr*0.10);
+    return'<div class="dc"><div class="pct purple">'+d+'% off</div><div class="fee">'+F(df*loc)+' MRR</div>'+
+      '<div class="row"><span class="k">ARR</span><span class="v">'+F(arr)+'</span></div>'+
+      '<div class="row"><span class="k">% of $1.5M</span><span class="v">'+pq+'%</span></div>'+
+      '<div class="row"><span class="k">10% comm</span><span class="v green">'+F(cm2)+'</span></div>'+
+      '<div class="row"><span class="k">MRR delta</span><span class="v red">-'+F((fee-df)*loc)+'</span></div></div>';
+  }).join('');
+  var d10f=Math.round(fee*0.9),d10r=C(vis,arpu,d10f,optPct,liftPct);
+  $('d-pitch').innerHTML='<button class="cp-btn" onclick="CP(\'d-pitch\')">Copy</button><strong>Closing lever:</strong> "At 10% off — '+F(d10f)+'/mo — ARPU still goes '+ap+' to $'+d10r.lucraARPU.toFixed(2)+'. Payback: '+d10r.paybackDays+' days. '+d10r.roiX+'x ROI. '+(loc>1?'Across '+loc+' locations: saves '+F((fee-d10f)*12*loc)+'/yr, '+F(d10f*loc*12)+' ARR.':'Saves '+F((fee-d10f)*12)+'/yr, '+F(d10f*12)+' ARR.')+'"';
+}
+
+/* ══════════════════════════════════════════════════
+   ENTERPRISE LICENSE
+══════════════════════════════════════════════════ */
+var VERTS={
+  minigolf:{vis:800,arpu:28,opt:15,lift:18,loc:5},
+  bowling:{vis:250,arpu:32,opt:12,lift:14,loc:8},
+  golf:{vis:1800,arpu:55,opt:10,lift:15,loc:12},
+  arcade:{vis:600,arpu:22,opt:18,lift:20,loc:4},
+  sportsbar:{vis:350,arpu:38,opt:8,lift:12,loc:3},
+  custom:null
+};
+
+function setVert(k,btn){
+  document.querySelectorAll('.vert-btn').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  if(k==='custom')return;
+  var v=VERTS[k];
+  LV.vis=v.vis;LV.arpu=v.arpu;LV.opt=v.opt;LV.lift=v.lift;LV.loc=v.loc;
+  syncLicenseInputs();renderLicense();
+}
+
+function syncLicenseInputs(){
+  ['loc','vis','arpu','opt','lift'].forEach(function(k){
+    var sl=$('ls-'+k),inp=$('li-'+k);
+    if(sl)sl.value=Math.min(+sl.max,Math.max(+sl.min,Math.round(LV[k])));
+    if(inp)inp.value=LV[k];
+  });
+}
+
+function LS(k){LV[k]=+$('ls-'+k).value;$('li-'+k).value=LV[k];renderLicense()}
+function LI(k){var v=parseFloat($('li-'+k).value);if(isNaN(v)||v<0)return;LV[k]=v;var sl=$('ls-'+k);if(sl)sl.value=Math.max(+sl.min,Math.min(+sl.max,Math.round(v)));renderLicense()}
+
+function getListFee(){var t=0;if(pkgs.A)t+=10000;if(pkgs.B)t+=10000;if(pkgs.C)t+=15000;if(addons.rewards)t+=5000;if(addons.gift)t+=5000;return t}
+function getEffFee(){var l=getListFee();if(!discActive)return l;if(customOverride!==null)return customOverride;return Math.round(l*(1-discPct/100))}
+
+function tPkg(k,amt,el){pkgs[k]=!pkgs[k];$('chk-'+k).checked=pkgs[k];el.classList.toggle('on',pkgs[k]);renderLicense()}
+function tPkgChk(k){pkgs[k]=$('chk-'+k).checked;$('pi-'+k).classList.toggle('on',pkgs[k]);renderLicense()}
+function tAddon(k,amt,el){addons[k]=!addons[k];$('chk-'+k).checked=addons[k];el.classList.toggle('on',addons[k]);renderLicense()}
+function tAddonChk(k){addons[k]=$('chk-'+k).checked;$('ai-'+k).classList.toggle('on',addons[k]);renderLicense()}
+
+function toggleDisc(){discActive=!discActive;$('chk-disc').checked=discActive;$('disc-opts').style.display=discActive?'flex':'none';if(!discActive){customOverride=null;$('custom-row').style.display='none';document.querySelectorAll('.disc-btn').forEach(function(b){b.classList.remove('on')})}renderLicense()}
+function setDisc(v,btn){
+  document.querySelectorAll('.disc-btn').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  if(v==='custom'){customOverride=null;discPct=0;$('custom-row').style.display='flex';var cp=$('custom-price');if(cp.value)onCustomPrice(+cp.value);}
+  else{discPct=v;customOverride=null;$('custom-row').style.display='none';}
+  renderLicense();
+}
+function onCustomPrice(v){customOverride=+v||null;var l=getListFee(),sav=l-(customOverride||l),pct=l>0?Math.round((sav/l)*100):0;$('custom-savings').textContent=sav>0?'Saves '+F(sav)+'/mo ('+pct+'% off)':'';renderLicense()}
+function setTerm(y,btn){termYrs=y;document.querySelectorAll('.term-btn').forEach(function(b){b.classList.remove('on')});btn.classList.add('on');renderLicense()}
+
+function onRSChange(k,v){
+  var other=k==='client'?'lucra':'client';
+  var opp=Math.max(0,Math.min(100,100-parseInt(v)||0));
+  $('rs-'+other).value=opp;
+  renderLicense();
+}
+
+function calcLoc(feePerLoc,vis,arpu,opt,lift){
+  var o=opt/100,li=lift/100,al=arpu*li,la=arpu+al;
+  var du=Math.round(vis*o),mr=du*al*30,nm=mr-feePerLoc;
+  var rx=feePerLoc>0?(mr/feePerLoc).toFixed(1):'0';
+  var pb=mr>0?Math.round(feePerLoc/(mr/30)*10)/10:null;
+  return{du:du,al:al,la:la,mr:mr,nm:nm,rx:rx,pb:pb};
+}
+
+function renderLicense(){
+  var listFee=getListFee(),effFee=getEffFee();
+  var loc=LV.loc,vis=LV.vis,arpu=LV.arpu,opt=LV.opt,lift=LV.lift;
+  var feePerLoc=loc>0?effFee/loc:0;
+  var discSav=listFee-effFee,discPctShow=listFee>0?Math.round((discSav/listFee)*100):0;
+
+  /* Fee display */
+  var feeHtml=discActive&&discSav>0?
+    '<span class="strike">'+F(listFee)+'</span>'+F(effFee)+'/mo <span style="font-size:11px;color:var(--amber)">('+discPctShow+'% off · saves '+F(discSav)+'/mo)</span>':
+    F(listFee)+'/mo';
+  $('lic-fee-val').innerHTML=feeHtml;
+
+  var arr=effFee*12,tcv=effFee*12*termYrs,listTcv=listFee*12*termYrs,tcvSav=listTcv-tcv;
+
+  /* TCV hero */
+  $('tcv-hero').innerHTML=
+    '<div><div class="tcv-label">'+(termYrs>1?termYrs+'-year TCV':'Annual contract value')+'</div>'+
+    '<div class="tcv-val">'+F(tcv)+'</div>'+
+    (tcvSav>0?'<div class="tcv-sub">'+F(tcvSav)+' saved vs list over '+termYrs+' year'+(termYrs>1?'s':'')+'</div>':'')+
+    '</div>'+
+    '<div style="text-align:right;font-size:12px;color:var(--blue)">'+
+    F(effFee)+'/mo × 12 = '+F(arr)+'/yr'+(termYrs>1?'<br>× '+termYrs+' years = '+F(tcv):'')+
+    '</div>';
+
+  var curR=calcLoc(feePerLoc,vis,arpu,opt,lift);
+  var totalMoLift=curR.mr*loc,totalNetMo=curR.nm*loc;
+
+  $('lic-deal-metrics').innerHTML=
+    '<div class="dm"><div class="dl">Monthly fee</div><div class="dv blue">'+F(effFee)+'</div><div class="ds">'+F(Math.round(feePerLoc))+'/loc</div></div>'+
+    '<div class="dm"><div class="dl">ARR</div><div class="dv blue">'+F(arr)+'</div>'+(termYrs>1?'<div class="ds">'+termYrs+'-yr TCV: '+F(tcv)+'</div>':'')+'</div>'+
+    '<div class="dm"><div class="dl">Total mo. lift</div><div class="dv green">'+F(totalMoLift)+'</div><div class="ds">across '+loc+' locs</div></div>'+
+    '<div class="dm"><div class="dl">Net mo. ROI</div><div class="dv '+(totalNetMo>=0?'green':'red')+'">'+F(totalNetMo)+'</div><div class="ds">'+curR.rx+'x return</div></div>';
+
+  /* ARPU flow */
+  var al=arpu*(lift/100),la=arpu+al;
+  $('lic-arpu-flow').innerHTML=
+    '<div class="flow-box"><div class="label">Current ARPU</div><div class="val">$'+arpu+'</div></div><div class="flow-arrow">+</div>'+
+    '<div class="flow-box" style="border-color:var(--amber-border);background:var(--amber-bg)"><div class="label" style="color:var(--amber)">+'+lift+'% lift</div><div class="val" style="color:var(--amber)">+$'+al.toFixed(2)+'</div></div><div class="flow-arrow">=</div>'+
+    '<div class="flow-highlight"><div class="label">Lucra ARPU</div><div class="val">$'+la.toFixed(2)+'</div></div><div class="flow-arrow">×</div>'+
+    '<div class="flow-cyan"><div class="label">Users/day ('+opt+'%)</div><div class="val">'+Math.round(vis*opt/100)+'</div></div><div class="flow-arrow">=</div>'+
+    '<div class="flow-highlight"><div class="label">Mo. lift/loc</div><div class="val">'+F(Math.round(vis*opt/100)*al*30)+'</div></div>';
+
+  /* Per-location table */
+  var counts=[1,2,5,10,20,50,100];
+  if(counts.indexOf(loc)===-1)counts.push(loc);
+  counts.sort(function(a,b){return a-b});
+  var bestROI=0,bestC=-1;
+  var rows=counts.map(function(c){var fpl=effFee/c,r=calcLoc(fpl,vis,arpu,opt,lift);if(parseFloat(r.rx)>bestROI&&r.nm>0){bestROI=parseFloat(r.rx);bestC=c}return{c:c,fpl:fpl,r:r}});
+  var thtml='';
+  rows.forEach(function(d){
+    var isCur=d.c===loc,isBest=d.c===bestC&&!isCur,cls=isCur?'cur':isBest?'best':'',nc=d.r.nm>=0?'gv':'rv';
+    thtml+='<tr class="'+cls+'"><td>'+d.c+' loc'+(d.c!==1?'s':'')+
+      (isCur?'<span class="lpill lpill-blue">current</span>':isBest?'<span class="lpill lpill-green">best ROI</span>':'')+'</td>'+
+      '<td>'+(discActive&&discSav>0?'<span style="color:var(--amber)">'+F(Math.round(d.fpl))+'</span>':F(Math.round(d.fpl)))+'</td>'+
+      '<td>'+d.r.du+'/day</td><td>$'+arpu+'</td>'+
+      '<td class="gv">$'+d.r.la.toFixed(2)+'</td>'+
+      '<td class="gv">'+F(d.r.mr)+'</td>'+
+      '<td class="'+nc+'">'+F(d.r.nm)+'</td>'+
+      '<td class="'+nc+'">'+d.r.rx+'x</td>'+
+      '<td>'+(d.r.pb?d.r.pb+'d':'—')+'</td></tr>';
+  });
+  $('loc-tbody').innerHTML=thtml;
+
+  /* Revenue share */
+  var clientPct=parseInt(($('rs-client')||{}).value||80);
+  var lucraPct=100-clientPct;
+  var totalNetAnn=totalNetMo*12;
+  var rsClientAnn=totalNetAnn*(clientPct/100),rsLucraAnn=totalNetAnn*(lucraPct/100);
+  $('rs-stats').innerHTML=
+    '<div class="stat"><div class="label">Net annual ROI pool</div><div class="val '+(totalNetAnn>=0?'green':'red')+'">'+F(totalNetAnn)+'</div></div>'+
+    '<div class="stat"><div class="label">Client share ('+clientPct+'%)</div><div class="val green">'+F(rsClientAnn)+'</div></div>'+
+    '<div class="stat"><div class="label">Lucra share ('+lucraPct+'%)</div><div class="val" style="color:var(--blue)">'+F(rsLucraAnn)+'</div></div>';
+
+  /* Usage fee */
+  var usageRate=parseFloat(($('usage-rate')||{}).value||0.40);
+  var msfPct=parseFloat(($('usage-msf')||{}).value||10)/100;
+  var monthlyUsers=curR.du*loc*30;
+  var rawUsage=monthlyUsers*Math.min(usageRate,1.00);
+  var msfAmt=rawUsage*msfPct;
+  var totalUsage=rawUsage+msfAmt;
+  var totalUsageAnn=totalUsage*12;
+  $('usage-stats').innerHTML=
+    '<div class="stat"><div class="label">Monthly Lucra users (all locs)</div><div class="val cyan">'+Math.round(monthlyUsers/1000)+'k</div></div>'+
+    '<div class="stat"><div class="label">Usage cost/mo (capped $1/user)</div><div class="val amber">'+F(rawUsage)+'</div></div>'+
+    '<div class="stat"><div class="label">Managed service fee</div><div class="val amber">'+F(msfAmt)+'</div></div>'+
+    '<div class="stat"><div class="label">Total usage/yr</div><div class="val amber">'+F(totalUsageAnn)+'</div><div class="sub">Paid by client to Lucra</div></div>';
+
+  /* Hidden ROI */
+  var baseFreq=1.4,newFreq=3.0,extraV=newFreq-baseFreq;
+  var annRepeat=extraV*arpu,annCust=Math.round(curR.du*365*0.3);
+  var totalRepeat=annRepeat*annCust*loc;
+  $('lic-hr-grid').innerHTML=
+    '<div class="hs"><div class="hl">Current freq</div><div class="hv">'+baseFreq+'x/yr</div></div>'+
+    '<div class="hs"><div class="hl">With Lucra</div><div class="hv">'+newFreq.toFixed(1)+'x/yr</div></div>'+
+    '<div class="hs"><div class="hl">Extra visits/yr</div><div class="hv">+'+extraV.toFixed(1)+'</div></div>'+
+    '<div class="hs"><div class="hl">Rev/customer</div><div class="hv green">'+F(annRepeat)+'/yr</div></div>';
+  $('lic-hr-note').textContent='~'+annCust.toLocaleString()+' Lucra customers/location/yr × '+F(annRepeat)+' × '+loc+' locations = '+F(totalRepeat)+'/yr in repeat-visit revenue — not counted above.';
+
+  /* Contract summary */
+  var pkgNames=Object.keys(pkgs).filter(function(k){return pkgs[k]}).map(function(k){return'Pkg '+k});
+  var addonNames=[];if(addons.rewards)addonNames.push('Play-for-Rewards');if(addons.gift)addonNames.push('Gift cards');
+  $('lic-contract').innerHTML=
+    '<div class="ct">Contract summary</div>'+
+    '<div class="row"><span class="k">Packages</span><span class="v blue">'+(pkgNames.length?pkgNames.join(' + '):'None')+'</span></div>'+
+    (addonNames.length?'<div class="row"><span class="k">Add-ons</span><span class="v">'+addonNames.join(', ')+'</span></div>':'')+
+    '<div class="row"><span class="k">List price</span><span class="v">'+F(listFee)+'/mo</span></div>'+
+    (discActive&&discSav>0?'<div class="row"><span class="k">Discount</span><span class="v amber">–'+F(discSav)+'/mo ('+discPctShow+'% off)</span></div>':'')+
+    '<div class="row"><span class="k">Agreed monthly fee</span><span class="v blue">'+F(effFee)+'/mo</span></div>'+
+    '<div class="row"><span class="k">Locations</span><span class="v">'+loc+' · '+F(Math.round(feePerLoc))+'/loc/mo</span></div>'+
+    '<div class="row"><span class="k">Contract term</span><span class="v">'+termYrs+' year'+(termYrs>1?'s':'')+'</span></div>'+
+    '<div class="sep" style="border-top:1px solid var(--border);margin:8px 0"></div>'+
+    '<div class="row"><span class="k">ARR</span><span class="v blue">'+F(arr)+'</span></div>'+
+    (termYrs>1?'<div class="row"><span class="k">TCV ('+termYrs+'-year)</span><span class="v blue">'+F(tcv)+'</span></div>':'')+ 
+    (tcvSav>0?'<div class="row"><span class="k">TCV saved vs list</span><span class="v amber">'+F(tcvSav)+'</span></div>':'')+
+    '<div class="sep" style="border-top:1px solid var(--border);margin:8px 0"></div>'+
+    '<div class="row"><span class="k">ARPU $'+arpu+' → Lucra $'+la.toFixed(2)+'</span><span class="v">+$'+al.toFixed(2)+'/user</span></div>'+
+    '<div class="row"><span class="k">Monthly lift (all locs)</span><span class="v green">'+F(totalMoLift)+'</span></div>'+
+    '<div class="row"><span class="k">Net monthly ROI</span><span class="v '+(totalNetMo>=0?'green':'red')+'">'+F(totalNetMo)+'</span></div>'+
+    '<div class="row"><span class="k">Annual net ROI</span><span class="v '+(totalNetMo>=0?'green':'red')+'">'+F(totalNetMo*12)+'</span></div>'+
+    (termYrs>1?'<div class="row"><span class="k">'+termYrs+'-year cumulative ROI</span><span class="v '+(totalNetMo>=0?'green':'red')+'">'+F(totalNetMo*12*termYrs)+'</span></div>':'')+
+    '<div class="row"><span class="k">Usage fees/yr (est.)</span><span class="v amber">'+F(totalUsageAnn)+'</span></div>'+
+    '<div class="row"><span class="k">Hidden ROI (repeat visits)</span><span class="v purple">+'+F(totalRepeat)+'/yr</span></div>';
+
+  /* Pitch */
+  $('lic-pitch').innerHTML='<button class="cp-btn" onclick="CP(\'lic-pitch\')">Copy</button>'+
+    '<strong>Pitch:</strong> "We\'re proposing a '+F(effFee)+'/mo enterprise license'+(pkgNames.length?' ('+pkgNames.join('+')+')':'')+(addonNames.length?' plus '+addonNames.join(' + '):'')+
+    ' covering all '+loc+' of your locations — '+F(Math.round(feePerLoc))+'/location/mo. '+
+    'Your current $'+arpu+' ARPU climbs to $'+la.toFixed(2)+' per Lucra user (+$'+al.toFixed(2)+' lift). '+
+    'At '+opt+'% opt-in across '+vis.toLocaleString()+' daily visitors per location, each location generates '+F(curR.mr)+'/mo — '+curR.rx+'x on its share of the fee. '+
+    'Portfolio total: '+F(totalMoLift)+'/mo lift, '+F(totalNetMo)+' net, '+F(arr)+'/yr ARR.'+
+    (termYrs>1?' '+termYrs+'-year TCV: '+F(tcv)+(tcvSav>0?', saving you '+F(tcvSav)+' vs list.':'.'):'')+
+    ' And that doesn\'t include the +110% repeat visit lift — an estimated '+F(totalRepeat)+'/yr in hidden revenue."';
+}
+
+/* ══════════════════════════════════════════════════
+   OBJECTION HANDLER
+══════════════════════════════════════════════════ */
+var curObj='loyalty';
+function showObj(k,btn){
+  curObj=k;
+  document.querySelectorAll('.obj-tab').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  renderObjections();
+}
+
+function renderObjections(){
+  var r=C(V.vis,V.arpu,V.fee,V.opt,V.lift);
+  var ap=ap_(),op=fq(V.opt),lp=fq(V.lift),loc=Math.max(1,Math.round(V.loc));
+  var loy=V.loy,lucCost=V.fee*12;
+
+  var objections={
+    loyalty:{
+      title:'We already have a loyalty program',
+      rebuttal:'Most loyalty programs see <strong>1–3% adoption</strong> and cost <strong>'+F(loy||50000)+'/yr</strong> to run. Lucra drives '+op+'% opt-in — that\'s '+(Math.round(parseFloat(op)/1.5))+'x more participants — at '+(loy>0?F(lucCost)+'/yr vs '+F(loy)+' you\'re spending now.':F(V.fee)+'/mo.')+' And unlike points programs, Lucra generates direct incremental revenue: <strong>'+F(r.moRev)+'/mo</strong> in ARPU lift on top of the engagement.',
+      stats:[['Current loyalty adoption','~2%','red'],['Lucra opt-in rate',op+'%','green'],['Monthly revenue lift',F(r.moRev),'green']],
+    },
+    optin:{
+      title:"Our customers won\'t opt in",
+      rebuttal:'You only need <strong>'+(r.bePct===Infinity?'—':r.bePct.toFixed(1))+'% opt-in</strong> to break even — that\'s just <strong>'+r.brkUsers+' users per day</strong> out of '+Math.round(V.vis).toLocaleString()+' daily visitors. Guests who compete spend <strong>$'+r.arpuLift.toFixed(2)+' more per visit</strong>, so even modest participation drives real revenue. The floor is extremely low.',
+      stats:[['Break-even opt-in',(r.bePct===Infinity?'—':r.bePct.toFixed(1)+'%'),'amber'],['Break-even users/day',r.brkUsers,'amber'],['You have',Math.round(V.vis).toLocaleString()+' visitors/day','green']],
+    },
+    cost:{
+      title:"The fee is too high",
+      rebuttal:'At '+F(V.fee)+'/mo, Lucra pays for itself in <strong>'+r.paybackDays+' days</strong> at current assumptions. That\'s a <strong>'+r.roiX+'x return</strong> — every dollar of license fee returns '+r.roiX+' in incremental revenue. You don\'t need to believe in 10% opt-in: at just <strong>'+(r.bePct===Infinity?'—':r.bePct.toFixed(1))+'% adoption</strong> you\'re already profitable.',
+      stats:[['Payback period',r.paybackDays+' days','green'],['ROI multiple',r.roiX+'x','green'],['Net monthly ROI',F(r.netMo),(r.netMo>0?'green':'red')]],
+    },
+    timing:{
+      title:"It\'s not the right time",
+      rebuttal:'Every month without Lucra is <strong>'+F(r.moRev)+' in foregone revenue</strong> at current traffic levels. Over a year that\'s <strong>'+F(r.moRev*12)+' left on the table</strong>. Implementation is 10 weeks — sign now, go live before peak season. We provide 2 weeks of dedicated engineering and product resources post-kickoff.',
+      stats:[['Monthly foregone revenue',F(r.moRev),'red'],['Annual foregone revenue',F(r.moRev*12),'red'],['Time to go-live','10 weeks','amber']],
+    },
+    roi:{
+      title:'Show me the proof',
+      rebuttal:'D&B data: Lucra users visit <strong>3x/year vs 1.4x</strong> for non-Lucra guests — a <strong>+110% repeat visit lift</strong>. Each competing user spends $'+r.arpuLift.toFixed(2)+' more per visit. At '+op+'% opt-in across your '+Math.round(V.vis).toLocaleString()+' daily visitors, that\'s <strong>'+F(r.moRev)+'/mo</strong> directly attributable, plus <strong>'+F((newFreq-1.4)*V.arpu*Math.round(r.dailyUsers*365*0.3))+'/yr</strong> in repeat-visit revenue on top.',
+      stats:[['ARPU lift per user','$'+r.arpuLift.toFixed(2),'green'],['Monthly revenue lift',F(r.moRev),'green'],['Repeat visit revenue est.',F((3.0-1.4)*V.arpu*Math.round(r.dailyUsers*365*0.3))+'/yr','purple']],
+    },
+    competitor:{
+      title:"We\'re already using a competitor",
+      rebuttal:'Lucra is the only platform built specifically for <strong>skill-based competitions in entertainment venues</strong> — not adapted from loyalty or gaming software. We include full risk management (KYC, fraud, geolocation, banking), a real-time dashboard, and custom game controls out of the box. Ask your current provider what their average ARPU lift is. Ours is <strong>+'+lp+'%</strong>.',
+      stats:[['ARPU lift','+'+lp+'%','green'],['Payback period',r.paybackDays+' days','green'],['Annual net ROI',F(r.annROI),'green']],
+    }
+  };
+  var newFreq=3.0;
+  var obj=objections[curObj];
+  $('obj-cards').innerHTML='<div class="obj-card show">'+
+    '<div class="obj-objection">"'+obj.title+'"</div>'+
+    '<div class="obj-label">Response</div>'+
+    '<div class="obj-rebuttal">'+obj.rebuttal+'</div>'+
+    '<div class="obj-label">Supporting numbers</div>'+
+    '<div class="obj-data">'+obj.stats.map(function(s){return'<div class="obj-stat"><div class="ol">'+s[0]+'</div><div class="ov '+(s[2]==='green'?'green':s[2]==='red'?'red':s[2]==='purple'?'purple':'amber')+'">'+s[1]+'</div></div>'}).join('')+'</div>'+
+  '</div>';
+}
+
+/* ══════════════════════════════════════════════════
+   BRAND COLOR + LOGO
+══════════════════════════════════════════════════ */
+function applyBrandColor(hex){brandColor=hex;document.documentElement.style.setProperty('--brand',hex);$('brand-color').value=hex}
+function resetBrandColor(){applyBrandColor('#9DFF93')}
+function hexToRgba(hex,a){var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return'rgba('+r+','+g+','+b+','+a+')'}
+
+function onUrlBlur(){var v=$('website-url').value.trim();if(v&&!uploadedLogoDataUrl)autoFetchLogo(v)}
+function autoFetchLogo(url){
+  var domain=url.replace(/^https?:\/\//,'').replace(/\/.*$/,'').replace(/^www\./,'');
+  if(!domain)return;
+  var st=$('logo-status');if(st){st.textContent='Detecting logo for '+domain+'...';st.style.color='var(--text3)'}
+  var img=new Image();img.crossOrigin='anonymous';
+  img.onload=function(){
+    if(img.naturalWidth<16){tryFavicon(domain);return}
+    try{
+      var c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
+      var ctx=c.getContext('2d');ctx.drawImage(img,0,0);
+      uploadedLogoDataUrl=c.toDataURL('image/png');showLogoPreview(uploadedLogoDataUrl);
+      if(st){st.textContent='✓ Logo loaded from '+domain;st.style.color='var(--green)'}
+      checkPDFReady();
+      try{var d=ctx.getImageData(0,0,Math.min(c.width,50),Math.min(c.height,50)).data,rs=0,gs=0,bs=0,n=0;
+        for(var i=0;i<d.length;i+=4){if(d[i+3]>128){rs+=d[i];gs+=d[i+1];bs+=d[i+2];n++}}
+        if(n>0){var rh=Math.round(rs/n).toString(16).padStart(2,'0'),gh=Math.round(gs/n).toString(16).padStart(2,'0'),bh=Math.round(bs/n).toString(16).padStart(2,'0'),det='#'+rh+gh+bh;
+          if(det!=='#000000'&&det!=='#ffffff')applyBrandColor(det);}
+      }catch(e){}
+    }catch(e){setLogoDirectUrl('https://logo.clearbit.com/'+domain+'?size=200',domain+' (auto)')}
+  };
+  img.onerror=function(){tryFavicon(domain)};
+  img.src='https://logo.clearbit.com/'+domain+'?size=200&cb='+Date.now();
+}
+function tryFavicon(domain){
+  var url='https://www.google.com/s2/favicons?sz=128&domain='+domain,img2=new Image();
+  img2.crossOrigin='anonymous';
+  img2.onload=function(){try{var c=document.createElement('canvas');c.width=img2.naturalWidth;c.height=img2.naturalHeight;c.getContext('2d').drawImage(img2,0,0);uploadedLogoDataUrl=c.toDataURL('image/png');showLogoPreview(uploadedLogoDataUrl);var st=$('logo-status');if(st){st.textContent='✓ Icon loaded for '+domain;st.style.color='var(--green)'}checkPDFReady()}catch(e){setLogoDirectUrl(url,domain+' icon')}};
+  img2.onerror=function(){var st=$('logo-status');if(st){st.textContent='⚠ No logo found — upload manually';st.style.color='var(--amber)'}};
+  img2.src=url;
+}
+function setLogoDirectUrl(url,label){uploadedLogoDataUrl=url;showLogoPreview(url);var st=$('logo-status');if(st){st.textContent='✓ '+label;st.style.color='var(--green)'}checkPDFReady()}
+function showLogoPreview(src){var img=$('logo-preview-img'),ph=$('drop-placeholder'),dz=$('logo-drop-zone');if(img){img.src=src;img.style.display='block'}if(ph)ph.style.display='none';if(dz)dz.classList.add('has-logo')}
+function handleLogoUpload(input){var file=input.files[0];if(!file)return;var rd=new FileReader();rd.onload=function(e){uploadedLogoDataUrl=e.target.result;showLogoPreview(e.target.result);var st=$('logo-status');if(st){st.textContent='✓ Logo uploaded';st.style.color='var(--green)'}checkPDFReady()};rd.readAsDataURL(file)}
+function loadLogoFromUrl(){var url=$('logo-url-input').value.trim();if(!url)return;var img=new Image();img.crossOrigin='anonymous';img.onload=function(){try{var c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);uploadedLogoDataUrl=c.toDataURL('image/png');showLogoPreview(uploadedLogoDataUrl);var st=$('logo-status');if(st){st.textContent='✓ Logo loaded';st.style.color='var(--green)'}checkPDFReady()}catch(e){setLogoDirectUrl(url,'URL logo')}};img.onerror=function(){var st=$('logo-status');if(st){st.textContent='⚠ Could not load from URL';st.style.color='var(--amber)'}};img.src=url}
+function logoDragOver(e){e.preventDefault();var dz=$('logo-drop-zone');if(dz)dz.classList.add('drag-over')}
+function logoDragLeave(){var dz=$('logo-drop-zone');if(dz)dz.classList.remove('drag-over')}
+function logoDrop(e){e.preventDefault();var dz=$('logo-drop-zone');if(dz)dz.classList.remove('drag-over');var file=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(file&&file.type.startsWith('image/')){var rd=new FileReader();rd.onload=function(ev){uploadedLogoDataUrl=ev.target.result;showLogoPreview(ev.target.result);var st=$('logo-status');if(st){st.textContent='✓ Logo dropped';st.style.color='var(--green)'}checkPDFReady()};rd.readAsDataURL(file)}}
+document.addEventListener('paste',function(e){var items=e.clipboardData&&e.clipboardData.items;if(!items)return;for(var i=0;i<items.length;i++){if(items[i].type.startsWith('image/')){var file=items[i].getAsFile(),rd=new FileReader();rd.onload=function(ev){uploadedLogoDataUrl=ev.target.result;showLogoPreview(ev.target.result);var st=$('logo-status');if(st){st.textContent='✓ Logo pasted';st.style.color='var(--green)'}checkPDFReady()};rd.readAsDataURL(file);e.preventDefault();break}}});
+function checkPDFReady(){var name=($('n-roi')&&$('n-roi').value.trim())||'',url=($('website-url')&&$('website-url').value.trim())||'',ready=name&&url&&uploadedLogoDataUrl,btn=$('pdf-btn'),msg=$('pdf-validation-msg');if(btn){btn.disabled=!ready;btn.style.opacity=ready?'1':'0.4';btn.style.cursor=ready?'pointer':'not-allowed'}if(msg)msg.style.display=ready?'none':'block'}
+function setTemplate(t,btn){cardTemplate=t;document.querySelectorAll('.tmpl-btn').forEach(function(b){b.classList.remove('on')});btn.classList.add('on')}
+function setTheme(t,swatch){cardTheme=t;document.querySelectorAll('.theme-swatch').forEach(function(s){s.classList.remove('on')});swatch.classList.add('on')}
+
+/* ══════════════════════════════════════════════════
+   CARD GENERATION
+══════════════════════════════════════════════════ */
+function buildNarrative(name,r,ap,op,lp,fee,bePct){
+  var lines=[];
+  lines.push(name?'Here\'s what Lucra looks like for '+name+'.':'Here\'s the projected ROI.');
+  lines.push('With '+Math.round(V.vis).toLocaleString()+' daily visitors and a '+op+'% opt-in, '+r.dailyUsers.toLocaleString()+' guests compete through Lucra each day — lifting ARPU from '+ap+' to $'+r.lucraARPU.toFixed(2)+' per user (+'+lp+'%).');
+  if(bePct!==Infinity&&bePct<5)lines.push('You only need '+bePct.toFixed(1)+'% adoption to break even. That\'s '+r.brkUsers+' people per day.');
+  lines.push('At current opt-in: '+F(r.moRev)+'/mo revenue lift on a '+F(fee)+' fee. Lucra pays for itself in '+r.paybackDays+' days.');
+  return lines.join(' ');
+}
+
+function GEN(tab){
+  var r=C(V.vis,V.arpu,V.fee,V.opt,V.lift),lp=fq(V.lift),op=fq(V.opt),ap=ap_();
+  var name=($('n-roi')?$('n-roi').value:'')||'Your Venue',loc=Math.max(1,Math.round(V.loc)),bePct=r.bePct;
+  var isDark=cardTheme==='dark',bc=brandColor||'#9DFF93';
+  var bg=isDark?'#0d0d0f':'#ffffff',surf=isDark?'#181820':'#f4f4f6',border=isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)';
+  var text=isDark?'#f5f5f5':'#0a0a0b',text2=isDark?'#a1a1aa':'#52525b',text3=isDark?'#6b6b7a':'#a1a1aa';
+  var bcBg=hexToRgba(bc,0.1),bcBorder=hexToRgba(bc,0.25);
+  var narrative=buildNarrative(name,r,ap,op,lp,V.fee,bePct);
+  var html='';
+
+  if(tab==='roi'){
+    if(cardTemplate==='hero'){
+      html='<div style="background:'+bg+';border-radius:16px;padding:28px;font-family:\'DM Sans\',system-ui,sans-serif;max-width:540px;border:1px solid '+border+'">';
+      html+=(uploadedLogoDataUrl?'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><img src="'+uploadedLogoDataUrl+'" style="max-height:38px;max-width:130px;object-fit:contain"><span style="font-size:11px;color:'+text3+';border:1px solid '+border+';padding:3px 9px;border-radius:20px">Powered by Lucra</span></div>':'<div style="margin-bottom:24px;font-size:13px;font-weight:600;color:'+bc+'">'+name+'</div>');
+      html+='<div style="background:'+bcBg+';border:1px solid '+bcBorder+';border-radius:12px;padding:22px;text-align:center;margin-bottom:18px">'+
+        '<div style="font-size:11px;color:'+bc+';text-transform:uppercase;letter-spacing:1px;font-weight:500;margin-bottom:6px">Annual net ROI</div>'+
+        '<div style="font-size:48px;font-weight:700;color:'+bc+';letter-spacing:-2px;line-height:1">'+F(r.annROI)+'</div>'+
+        '<div style="font-size:12px;color:'+text2+';margin-top:7px">'+r.roiX+'x return · Pays for itself in '+r.paybackDays+' days</div></div>';
+      html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px">'+
+        [['Monthly lift',F(r.moRev)],['Users/day',''+r.dailyUsers],['ARPU lift','+$'+r.arpuLift.toFixed(2)]].map(function(s){
+          return'<div style="background:'+surf+';border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:'+text3+';margin-bottom:4px">'+s[0]+'</div><div style="font-size:18px;font-weight:600;color:'+text+'">'+s[1]+'</div></div>';
+        }).join('')+'</div>';
+      if(bePct!==Infinity&&bePct<5)html+='<div style="background:'+surf+';border-left:3px solid '+bc+';border-radius:0 8px 8px 0;padding:9px 12px;margin-bottom:14px;font-size:12px;color:'+text2+'">Only <strong style="color:'+bc+'">'+bePct.toFixed(1)+'% opt-in</strong> needed to break even — just '+r.brkUsers+' users/day.</div>';
+      html+='<div style="font-size:11px;color:'+text3+';line-height:1.7;margin-bottom:14px">'+narrative+'</div>';
+      html+='<div style="border-top:1px solid '+border+';padding-top:12px;display:flex;justify-content:space-between;align-items:center">'+
+        '<span style="font-size:10px;color:'+text3+'">'+ap+' ARPU · '+op+'% opt-in · +'+lp+'% lift · '+F(V.fee)+'/mo'+(loc>1?' · '+loc+' locs':'')+'</span>'+
+        '<span style="font-size:11px;font-weight:600;color:'+bc+'">Lucra</span></div></div>';
+    } else if(cardTemplate==='full'){
+      html='<div style="background:'+bg+';border-radius:16px;padding:26px;font-family:\'DM Sans\',system-ui,sans-serif;max-width:580px;border:1px solid '+border+'">';
+      html+=(uploadedLogoDataUrl?'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px"><img src="'+uploadedLogoDataUrl+'" style="max-height:34px;max-width:110px;object-fit:contain"><span style="font-size:11px;color:'+text3+'">Lucra ROI Analysis</span></div>':'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><span style="font-weight:600;color:'+text+'">'+name+'</span><span style="font-size:11px;color:'+text3+'">Lucra ROI Analysis</span></div>');
+      html+='<div style="background:'+bcBg+';border:1px solid '+bcBorder+';border-radius:12px;padding:18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">'+
+        '<div><div style="font-size:10px;color:'+bc+';margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px">Annual net ROI</div><div style="font-size:34px;font-weight:700;color:'+bc+';letter-spacing:-1px">'+F(r.annROI)+'</div></div>'+
+        '<div style="text-align:right"><div style="font-size:10px;color:'+text3+';margin-bottom:3px">Monthly net</div><div style="font-size:20px;font-weight:600;color:'+text+'">'+F(r.netMo)+'</div><div style="font-size:10px;color:'+text3+';margin-top:2px">'+r.roiX+'x return</div></div></div>';
+      html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">'+
+        [['Daily visitors',Math.round(V.vis).toLocaleString()],['Opt-in rate',op+'%'],['Users/day',''+r.dailyUsers],['Monthly users',r.moUsers.toLocaleString()],['Current ARPU',ap],['Lucra ARPU','$'+r.lucraARPU.toFixed(2)],['Monthly lift',F(r.moRev)],['Payback',''+r.paybackDays+' days']].map(function(row){
+          return'<div style="background:'+surf+';border-radius:7px;padding:9px 11px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:'+text3+'">'+row[0]+'</span><span style="font-size:12px;font-weight:600;color:'+text+'">'+row[1]+'</span></div>';
+        }).join('')+'</div>';
+      if(bePct!==Infinity)html+='<div style="background:'+surf+';border-left:3px solid '+bc+';border-radius:0 8px 8px 0;padding:9px 12px;font-size:11px;color:'+text2+';margin-bottom:14px">Break-even at <strong style="color:'+bc+'">'+(bePct%1===0?bePct:bePct.toFixed(1))+'% adoption</strong> — just '+r.brkUsers+' users/day.</div>';
+      html+='<div style="border-top:1px solid '+border+';padding-top:10px;font-size:10px;color:'+text3+'">'+narrative+'</div></div>';
+    } else {
+      var rc2=C(V.vis,V.arpu,V.fee,5,10),ra2=C(V.vis,V.arpu,V.fee,20,12.5),rcs2=C(V.vis,V.arpu,V.fee,40,15);
+      var scns2=[{label:'Conservative',color:'#F59E0B',r:rc2,opt:'5%',lift:'10%'},{label:'Average',color:'#3B82F6',r:ra2,opt:'20%',lift:'12.5%'},{label:'Case study',color:bc,r:rcs2,opt:'40%',lift:'15%'}];
+      html='<div style="background:'+bg+';border-radius:16px;padding:26px;font-family:\'DM Sans\',system-ui,sans-serif;max-width:620px;border:1px solid '+border+'">';
+      html+=(uploadedLogoDataUrl?'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px"><img src="'+uploadedLogoDataUrl+'" style="max-height:34px;max-width:110px;object-fit:contain"><span style="font-size:11px;color:'+text3+'">3 Scenarios for '+name+'</span></div>':'<div style="margin-bottom:18px;font-size:14px;font-weight:600;color:'+text+'">3 Scenarios for '+name+'</div>');
+      html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'+
+        scns2.map(function(s){return'<div style="background:'+surf+';border-radius:10px;padding:13px;border:1px solid '+border+'">'+
+          '<div style="font-size:10px;font-weight:600;color:'+s.color+';margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">'+s.label+'</div>'+
+          '<div style="font-size:10px;color:'+text3+';margin-bottom:2px">'+s.opt+' opt-in / '+s.lift+' lift</div>'+
+          '<div style="height:1px;background:'+border+';margin:7px 0"></div>'+
+          '<div style="font-size:20px;font-weight:700;color:'+s.color+';margin-bottom:2px">'+F(s.r.annROI)+'</div>'+
+          '<div style="font-size:10px;color:'+text3+';margin-bottom:7px">annual net ROI</div>'+
+          '<div style="font-size:12px;color:'+text2+'">'+F(s.r.netMo)+'/mo</div>'+
+          '<div style="font-size:10px;color:'+text3+'">'+s.r.roiX+'x · '+s.r.paybackDays+'d payback</div></div>';
+        }).join('')+'</div>';
+      html+='<div style="border-top:1px solid '+border+';padding-top:10px;font-size:10px;color:'+text3+'">'+ap+' ARPU · '+Math.round(V.vis).toLocaleString()+' daily visitors · '+F(V.fee)+'/mo. Even the most conservative scenario generates positive ROI.</div></div>';
+    }
+  } else if(tab==='pricing'){
+    var pfee=V.pfee,pname=($('n-pricing')||{}).value||'Your Venue';
+    var po2=[{t:'13-mo annual',tm:13,fm:1,pm:12},{t:'14-mo annual',tm:14,fm:2,pm:12},{t:'25-mo 2-year',tm:25,fm:2,pm:23},{t:'26-mo 2-year',tm:26,fm:4,pm:22}];
+    html='<div style="background:#0d0d0f;border-radius:14px;padding:22px;font-family:\'DM Sans\',system-ui;max-width:520px;border:1px solid rgba(255,255,255,0.08)">'+
+      '<div style="font-size:13px;color:#9DFF93;font-weight:600;margin-bottom:14px">'+pname+' — Contract options</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">'+
+      po2.map(function(o,i){var tot=pfee*o.pm,eff=Math.round(tot/o.tm),disc=((1-eff/pfee)*100).toFixed(1),saves=pfee*o.tm-tot,c=['#3B82F6','#9DFF93','#8B5CF6','#F59E0B'][i];
+        return'<div style="background:#181820;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:13px">'+
+          '<div style="font-size:11px;font-weight:500;color:'+c+';margin-bottom:7px;text-transform:uppercase;letter-spacing:0.5px">'+o.t+'</div>'+
+          '<div style="font-size:12px;color:#71717a;margin-bottom:7px">'+o.fm+' month'+(o.fm>1?'s':'')+' free</div>'+
+          '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:#6b6b7a">Contract</span><span style="color:#f5f5f5">$'+tot.toLocaleString()+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:7px"><span style="color:#6b6b7a">Eff. rate</span><span style="color:#f5f5f5">$'+eff+'/mo</span></div>'+
+          '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:#9DFF93;font-weight:500">Saves $'+saves.toLocaleString()+'</span><span style="font-size:10px;background:rgba(157,255,147,0.1);color:#9DFF93;padding:2px 7px;border-radius:20px">'+disc+'% off</span></div></div>';
+      }).join('')+'</div></div>';
+  } else if(tab==='discount'){
+    var dname=($('n-discount')||{}).value||'Your Venue';
+    html='<div style="background:#0d0d0f;border-radius:14px;padding:22px;font-family:\'DM Sans\',system-ui;max-width:520px;border:1px solid rgba(255,255,255,0.08)">'+
+      '<div style="font-size:13px;color:#F59E0B;font-weight:600;margin-bottom:14px">'+dname+' — Discount scenarios</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px">'+
+      [5,10,15,20].map(function(d){var df=Math.round(V.fee*(1-d/100)),dr=C(V.vis,V.arpu,df,V.opt,V.lift);
+        return'<div style="background:#181820;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px;text-align:center">'+
+          '<div style="font-size:14px;font-weight:700;color:#F59E0B;margin-bottom:2px">'+d+'%</div>'+
+          '<div style="font-size:11px;color:#71717a;margin-bottom:7px">'+F(df)+'/mo</div>'+
+          '<div style="font-size:15px;font-weight:600;color:'+(dr.netMo>0?'#9DFF93':'#EF4444')+'">'+F(dr.netMo)+'</div>'+
+          '<div style="font-size:10px;color:#71717a">net/mo</div>'+
+          '<div style="font-size:11px;color:#a1a1aa;margin-top:3px">'+dr.roiX+'x ROI</div></div>';
+      }).join('')+'</div></div>';
+  }
+  $('o-'+tab).innerHTML=html;
+  $('w-'+tab).classList.add('show');
+  if(tab==='roi'&&$('card-template-label'))$('card-template-label').textContent=({hero:'Hero number',full:'Full breakdown',scenarios:'3 scenarios'})[cardTemplate]+' · '+(cardTheme==='dark'?'Dark':'Light')+' theme';
+  toast('Card generated');
+}
+
+function CPH(tab){GEN(tab);setTimeout(function(){var el=$('o-'+tab);if(!el)return;navigator.clipboard.writeText(el.innerHTML).then(function(){toast('HTML copied')}).catch(function(){})},100)}
+function DL(tab){var el=$('o-'+tab);if(!el)return;html2canvas(el,{backgroundColor:null,scale:2,useCORS:true,allowTaint:true}).then(function(canvas){var a=document.createElement('a');a.download='lucra-roi-'+(($('n-roi')||{}).value||'card').replace(/\s+/g,'-').toLowerCase()+'.png';a.href=canvas.toDataURL();a.click();toast('Downloading...');})}
+
+function GENPDF(){
+  var prev=cardTemplate;
+  ['hero','full','scenarios'].forEach(function(t,i){
+    cardTemplate=t;GEN('roi');
+    var el=$('o-roi');if(!el)return;
+    var w=document.createElement('div');w.style.cssText='position:fixed;left:-9999px;top:0;padding:20px;background:#0d0d0f';
+    w.innerHTML=el.innerHTML;document.body.appendChild(w);
+    html2canvas(w,{backgroundColor:'#0d0d0f',scale:2,useCORS:true}).then(function(canvas){
+      document.body.removeChild(w);
+      var a=document.createElement('a');a.download='lucra-'+((($('n-roi')||{}).value||'prospect').replace(/\s+/g,'-').toLowerCase())+'-p'+(i+1)+'.png';
+      a.href=canvas.toDataURL();setTimeout(function(){a.click()},i*500);
+    });
+  });
+  cardTemplate=prev;GEN('roi');toast('Generating 3-page PDF...');
+}
+
+/* ══════════════════════════════════════════════════
+   SHARE + EMAIL
+══════════════════════════════════════════════════ */
+function buildShareUrl(){var base=location.origin+location.pathname,p=new URLSearchParams();p.set('vis',V.vis);p.set('arpu',V.arpu);p.set('fee',V.fee);p.set('opt',V.opt);p.set('lift',V.lift);p.set('loc',V.loc);p.set('loy',V.loy);var n=($('n-roi')||{}).value||'';if(n)p.set('name',encodeURIComponent(n));return base+'?'+p.toString()}
+function buildEmailBody(shareUrl){var r=C(V.vis,V.arpu,V.fee,V.opt,V.lift),name=($('n-roi')||{}).value||'[Company]',ap=ap_(),op=fq(V.opt),lp=fq(V.lift);return'Hi,\n\nI put together the Lucra ROI numbers for '+name+'.\n\nTL;DR:\n  • Annual net ROI: '+F(r.annROI)+'\n  • Monthly revenue lift: '+F(r.moRev)+'\n  • Payback period: '+r.paybackDays+' days\n  • ROI multiple: '+r.roiX+'x\n\nBased on '+Math.round(V.vis).toLocaleString()+' daily visitors, '+ap+' ARPU, '+op+'% opt-in, +'+lp+'% lift, and a '+F(V.fee)+'/mo Lucra fee.\n\nExplore the numbers yourself:\n'+shareUrl+'\n\nHappy to walk through any of this.\n\nBest,'}
+function openShareModal(){var url=buildShareUrl();$('share-url-display').textContent=url;$('email-textarea').value=buildEmailBody(url);$('share-modal').style.display='block'}
+function closeShareModal(){$('share-modal').style.display='none'}
+function copyShareUrl(){navigator.clipboard.writeText(buildShareUrl());toast('Link copied!')}
+function copyEmailDraft(){navigator.clipboard.writeText($('email-textarea').value);toast('Email copied!')}
+function openMailto(){var name=($('n-roi')||{}).value||'',subject='Lucra ROI analysis'+(name?' — '+name:'');window.location.href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent($('email-textarea').value)}
+function openEmailDraft(){openShareModal();setTimeout(function(){var el=$('email-textarea');if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},200)}
+
+/* ══════════════════════════════════════════════════
+   KEYBOARD SHORTCUTS
+══════════════════════════════════════════════════ */
+document.addEventListener('keydown',function(e){
+  var meta=e.metaKey||e.ctrlKey;
+  if(meta&&e.key==='g'){e.preventDefault();GEN('roi');return}
+  if(meta&&e.key==='s'){e.preventDefault();openShareModal();return}
+  if(meta&&e.key==='r'){e.preventDefault();resetAll();return}
+  if(e.key==='r'&&!e.target.closest('input,textarea')){resetAll();return}
+});
+
+/* ══════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════ */
+initP();
+sync();
+syncLicenseInputs();
+U();
+</script>
+</body>
+</html>
